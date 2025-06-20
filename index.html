@@ -52,22 +52,23 @@
     </div>
 
     <div class="form-group">
-        <label for="proc">Natureza do Processo:</label>
-        <select id="proc">
-            <option value="Cível/Admin" selected>Cível / Administrativo / Trabalho (Não Urgente)</option>
-            <option value="Penal">Penal</option>
+        <label for="regime">Regime de Contagem do Prazo:</label>
+        <select id="regime">
+            <option value="comum" selected>Regime Comum (Cível, Admin., Trabalho) - Dias úteis, suspende em férias</option>
+            <option value="penal">Regime Contínuo (Penal) - Dias seguidos</option>
         </select>
+    </div>
+
+    <div class="form-group" id="urgency_box">
+        <input type="checkbox" id="urg" name="urg">
+        <label for="urg" style="display: inline-block;">Marcar se o processo for Urgente (não suspende em férias judiciais)</label>
+        <small>Esta opção aplica-se apenas ao Regime Comum.</small>
     </div>
 
     <div class="form-group">
         <label for="comarca">Comarca do Processo:</label>
         <select id="comarca"></select>
         <small><strong>Importante:</strong> A seleção da comarca é crucial para contabilizar corretamente o feriado municipal.</small>
-    </div>
-
-    <div class="form-group">
-        <input type="checkbox" id="urg" name="urg">
-        <label for="urg" style="display: inline-block;">Marcar se o processo for Urgente (não suspende em férias judiciais)</label>
     </div>
 
     <div id="dilação_options" class="dilação-box" style="display: none;">
@@ -198,28 +199,24 @@
         let dataPresuncao;
         let explanation = "";
 
-        // Notificação Eletrónica ou Carta Simples
         if (method === 'citius' || method === 'postal_simples') {
             explanation = `Notificação presume-se feita no 3º dia útil seguinte (Art. 248º/249º CPC):`;
             let businessDaysFound = 0;
             let checkDay = new Date(dateActo.valueOf());
             while (businessDaysFound < 3) {
                 checkDay = addDays(checkDay, 1);
-                // A presunção conta-se sempre por dias úteis, mesmo em processo urgente (natureza do ato de notificação)
                 if (isBusinessDay(checkDay, { ...context, isUrgente: false })) {
                     businessDaysFound++;
                 }
             }
             dataPresuncao = new Date(checkDay.valueOf());
-            // Se o 3º dia útil cair num dia que não é útil (feriado que calha a meio), transita para o seguinte
             while(!isBusinessDay(dataPresuncao, { ...context, isUrgente: false })) {
                 dataPresuncao = addDays(dataPresuncao, 1);
             }
-        } else { // Citação/Notificação por AR ou Pessoal
+        } else {
             dataPresuncao = dateActo;
             explanation = `Notificação considera-se feita na data do ato (assinatura/ato pessoal):`;
         }
-        // O prazo começa a correr no dia a seguir à data da presunção ou do ato
         const dataInicioPrazo = addDays(dataPresuncao, 1);
         return { dataPresuncao, dataInicioPrazo, explanation };
     }
@@ -233,13 +230,12 @@
         const local = document.getElementById('loc_citacao').value;
 
         switch (local) {
-            case 'fora_comarca':       dilação += 5; break;  //
+            case 'fora_comarca':       dilação += 5; break;
             case 'regioes_autonomas':  dilação += 15; break;
             case 'estrangeiro':        dilação += 30; break;
         }
-        // A dilação por pessoa diversa é CUMULATIVA
         if (pessoaDiversa) {
-            dilação += 5; //
+            dilação += 5;
         }
         return dilação;
     }
@@ -253,14 +249,13 @@
         }
         const dateActo = parseDate(dateActoStr);
         const year = dateActo.getFullYear();
-        const procType = document.getElementById('proc').value;
+        const regimeType = document.getElementById('regime').value;
         const diasPrazoBase = parseInt(document.getElementById('prazo').value) || 1;
         const isUrgente = document.getElementById('urg').checked;
         const comarca = document.getElementById('comarca').value;
 
         const context = {
-            isUrgente,
-            // Carregar feriados de 2 anos para cobrir prazos que atravessam o fim do ano
+            isUrgente: (regimeType === 'comum' && isUrgente),
             holidays: [...getHolidays(year, comarca), ...getHolidays(year + 1, comarca)],
             vacations: [...getJudicialVacations(year), ...getJudicialVacations(year + 1)]
         };
@@ -273,16 +268,16 @@
         let calculationMode;
         let diaContagem = new Date(dataInicioPrazo.valueOf());
 
-        if (procType === 'Penal') {
-            calculationMode = `Regime Penal (Art. 104.º CPP): Contagem contínua. Se o termo cair em dia não útil, transfere-se para o 1º dia útil seguinte.`;
+        if (regimeType === 'penal') {
+            calculationMode = `Regime Contínuo (Art. 104.º CPP): Contagem em dias seguidos. Se o termo cair em dia não útil, transfere-se para o 1º dia útil seguinte.`;
             dataFinal = addDays(diaContagem, prazoTotal - 1);
-            while (!isBusinessDay(dataFinal, { ...context, isUrgente: true })) { // Em penal, o termo transfere-se, mas a contagem não pára em férias
+            while (!isBusinessDay(dataFinal, { ...context, isUrgente: true })) {
                 dataFinal = addDays(dataFinal, 1);
             }
-        } else { // Cível, Administrativo, Trabalho (Regra Geral)
+        } else { // Regime Comum
             calculationMode = isUrgente ?
-                `Regime Urgente: Contagem em dias úteis, sem suspensão em férias judiciais.` :
-                `Regime Geral (Art. 138.º CPC): Contagem em dias úteis, com suspensão em férias judiciais.`;
+                `Regime Comum (Urgente): Contagem em dias úteis, sem suspensão em férias judiciais.` :
+                `Regime Comum (Padrão - Art. 138.º CPC): Contagem em dias úteis, com suspensão em férias judiciais.`;
             let prazoCount = 0;
             while (prazoCount < prazoTotal) {
                 if (isBusinessDay(diaContagem, context)) {
@@ -295,13 +290,12 @@
             dataFinal = diaContagem;
         }
 
-        // Cálculo do Prazo de Graça (3 dias úteis)
         const gracePeriod = [];
         let lastDay = new Date(dataFinal.valueOf());
         let graceCount = 0;
         while (graceCount < 3) {
             lastDay = addDays(lastDay, 1);
-            if (isBusinessDay(lastDay, context)) { // Contagem também em dias úteis
+            if (isBusinessDay(lastDay, context)) {
                 graceCount++;
                 gracePeriod.push(lastDay);
             }
@@ -313,7 +307,7 @@
             <h4>1. Notificação e Início do Prazo</h4>
             <p><span class="res-label">Data do Ato (Envio/Assinatura):</span> <span class="res-value">${formatDate(dateActo)}</span></p>
             <p><span class="res-label">${explanation}</span> <span class="res-value">${formatDate(dataPresuncao)}</span></p>
-            <p><span class="res-label">➡️ Início da Contagem do Prazo (dia útil seguinte):</span> <span class="res-value">${formatDate(dataInicioPrazo)}</span></p>
+            <p><span class="res-label">➡️ Início da Contagem do Prazo (dia seguinte):</span> <span class="res-value">${formatDate(dataInicioPrazo)}</span></p>
             <hr>
 
             <h4>2. Duração e Termo do Prazo</h4>
@@ -332,7 +326,6 @@
                 <p style="margin-left:20px;">3º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[2])}</span></p>
             </div>
         `;
-        // Mostra o aviso de limitações após o cálculo
         document.getElementById('disclaimer').style.display = 'block';
     }
 
@@ -340,6 +333,8 @@
         const method = document.getElementById('notification_method').value;
         const label = document.getElementById('date_acto_label');
         const dilacaoOptions = document.getElementById('dilação_options');
+        const regime = document.getElementById('regime').value;
+        const urgencyBox = document.getElementById('urgency_box');
 
         switch (method) {
             case 'citius': label.textContent = 'Data do Envio (CITIUS/SITAF):'; break;
@@ -348,11 +343,17 @@
             case 'pessoal': label.textContent = 'Data da Notificação/Citação Pessoal:'; break;
         }
 
-        // Opções de Dilação só são visíveis para citação pessoal ou com AR
         if (method === 'postal_ar' || method === 'pessoal') {
             dilacaoOptions.style.display = 'block';
         } else {
             dilacaoOptions.style.display = 'none';
+        }
+
+        if (regime === 'penal') {
+            urgencyBox.style.display = 'none';
+            document.getElementById('urg').checked = false;
+        } else {
+            urgencyBox.style.display = 'block';
         }
     }
 
@@ -381,7 +382,7 @@
     window.onload = () => {
         document.getElementById('date_acto').value = toYYYYMMDD(new Date());
         document.getElementById('notification_method').addEventListener('change', updateUiComponents);
-        document.getElementById('proc').addEventListener('change', updateUiComponents);
+        document.getElementById('regime').addEventListener('change', updateUiComponents);
         populateComarcas();
         updateUiComponents();
     };
