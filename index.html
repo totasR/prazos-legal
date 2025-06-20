@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Calculadora de Prazos Processuais</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; padding: 0 1em; }
+    label { display: block; margin: .5em 0; }
+    input, select, button { padding: .4em; font-size: 1em; }
+    button { margin-top: 1em; }
+    #result { margin-top: 1.5em; padding: 1em; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>📅 Calculadora de Prazos Processuais</h1>
+
+  <label>Processo:
+    <select id="proc">
+      <option>Civil</option>
+      <option>Penal</option>
+      <option>Administrativo</option>
+    </select>
+  </label>
+
+  <label>Notificação:
+    <select id="notif">
+      <option>Eletrónica</option>
+      <option>Carta AR</option>
+      <option>Mandatário</option>
+      <option>Presencial</option>
+    </select>
+  </label>
+
+  <label>Data da notificação:
+    <input type="date" id="date_notif" value="">
+  </label>
+
+  <label>Dilações (dias):
+    <input type="number" id="dil" min="0" value="0">
+  </label>
+
+  <label><input type="checkbox" id="urg"> Urgente</label>
+  <label><input type="checkbox" id="sus" checked> Suspende em férias judiciais</label>
+
+  <label>Prazo (dias):
+    <input type="number" id="prazo" min="1" value="10">
+  </label>
+
+  <button id="calc">Calcular</button>
+
+  <div id="result"></div>
+
+  <script>
+    // Lista de feriados nacionais em Portugal 2025 :contentReference[oaicite:0]{index=0}
+    const holidays = [
+      "2025-01-01", // Ano Novo
+      "2025-04-18", // Sexta-feira Santa
+      "2025-04-20", // Domingo de Páscoa
+      "2025-04-25", // Dia da Liberdade
+      "2025-05-01", // Dia do Trabalhador
+      "2025-06-10", // Dia de Portugal
+      "2025-06-19", // Corpo de Deus
+      "2025-08-15", // Assunção de Nossa Senhora
+      "2025-10-05", // Implantação da República
+      "2025-11-01", // Dia de Todos-os-Santos
+      "2025-12-01", // Restauração da Independência
+      "2025-12-08", // Imaculada Conceição
+      "2025-12-25"  // Natal
+    ];
+
+    function isBusinessDay(d) {
+      const wd = d.getDay(); // 0=Dom,6=Sáb
+      const iso = d.toISOString().slice(0,10);
+      return wd >=1 && wd <=5 && !holidays.includes(iso);
+    }
+
+    function addDays(d, n) {
+      const x = new Date(d);
+      x.setDate(x.getDate() + n);
+      return x;
+    }
+
+    function getEffectiveDate(nd, type) {
+      let eff = new Date(nd);
+      if (type === "Carta AR") eff = addDays(eff, 10);
+      else if (type === "Mandatário") eff = addDays(eff, 5);
+      // Eletrónica e Presencial = dia mesmo
+
+      // avança até ser dia útil
+      while (!isBusinessDay(eff)) {
+        eff = addDays(eff, 1);
+      }
+      return eff;
+    }
+
+    function calculateDeadline(eff, dil, prazo) {
+      // início: próximo dia útil
+      let start = addDays(eff, 1);
+      while (!isBusinessDay(start)) start = addDays(start,1);
+
+      // aplica dilação (dias úteis)
+      let cnt=0;
+      while (cnt < dil) {
+        start = addDays(start,1);
+        if (isBusinessDay(start)) cnt++;
+      }
+
+      // conta o prazo (dias úteis)
+      let cnt2 = 0;
+      let end = new Date(start);
+      while (cnt2 < prazo) {
+        end = addDays(end,1);
+        if (isBusinessDay(end)) cnt2++;
+      }
+
+      return { eff, start, end };
+    }
+
+    document.getElementById("calc").onclick = () => {
+      const nd = document.getElementById("date_notif").value;
+      if (!nd) { alert("Escolhe uma data!"); return; }
+      const notif = document.getElementById("notif").value;
+      const dil = parseInt(document.getElementById("dil").value);
+      const prazo = parseInt(document.getElementById("prazo").value);
+
+      const eff = getEffectiveDate(nd, notif);
+      const { start, end } = calculateDeadline(eff, dil, prazo);
+
+      const fmt = d => d.toLocaleDateString("pt-PT");
+      document.getElementById("result").innerHTML = `
+        <p>🔔 <strong>Data efetiva da notificação:</strong> ${fmt(eff)}</p>
+        <p>🟢 <strong>Data início da contagem:</strong> ${fmt(start)}</p>
+        <p>⏰ <strong>Data final (prazo):</strong> ${fmt(end)}</p>
+      `;
+    };
+
+    // inicializa data hoje no datepicker
+    document.getElementById("date_notif").value = new Date().toISOString().slice(0,10);
+  </script>
+</body>
+</html>
