@@ -13,7 +13,7 @@
         input[type="date"], select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { background-color: #3498db; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
         button:hover { background-color: #2980b9; }
-        #result { margin-top: 25px; padding: 20px; background-color: #ecf0f1; border-radius: 5px; border-left: 5px solid #3498db; }
+        #result { margin-top: 25px; padding: 20px; background-color: #ecf0f1; border-radius: 5px; border-left: 5px solid #3498db; display: none; }
         .res-label { font-weight: bold; color: #555; }
         .res-value { color: #2c3e50; }
         .res-highlight { font-weight: bold; color: #e74c3c; background-color: #f9e3e3; padding: 3px 6px; border-radius: 4px;}
@@ -21,7 +21,7 @@
         .info-box { padding: 15px; margin-top: 15px; border-radius: 4px; }
         .info-box.details { background-color: #e8f4fd; border-left: 4px solid #3498db; }
         .info-box.warning { background-color: #fef9e7; border-left: 4px solid #f39c12; }
-        .info-box.warning ul { margin-top: 10px; padding-left: 20px; }
+        .info-box.warning ul { margin-top: 10px; padding-left: 20px; list-style-type: '⚖️'; padding-left: 30px; line-height: 1.8; }
         small { color: #7f8c8d; display: block; margin-top: 5px; }
         .dilação-box { padding: 15px; border: 1px dashed #bdc3c7; border-radius: 5px; margin-top: 10px; background: #fdfdfd;}
     </style>
@@ -49,6 +49,7 @@
     <div class="form-group">
         <label for="prazo">Prazo Processual (dias):</label>
         <input type="number" id="prazo" value="20" min="1">
+        <small>Insira o n.º de dias do prazo (e.g., 30 para contestação cível, 10 para contestação em trabalho). Consulte o guia rápido abaixo.</small>
     </div>
 
     <div class="form-group">
@@ -62,7 +63,7 @@
     <div class="form-group" id="urgency_box">
         <input type="checkbox" id="urg" name="urg">
         <label for="urg" style="display: inline-block;">Marcar se o processo for Urgente (não suspende em férias judiciais)</label>
-        <small>Esta opção aplica-se apenas ao Regime Comum.</small>
+        <small>Esta opção aplica-se apenas ao Regime Comum (e.g., Processos de Insolvência, Procedimentos Cautelares).</small>
     </div>
 
     <div class="form-group">
@@ -91,29 +92,30 @@
 
     <button onclick="calculate()">Calcular Prazo</button>
 
-    <div id="result"></div>
+    <div id="result">
+         </div>
 
-    <div id="disclaimer" class="info-box warning" style="display: none; margin-top: 20px;">
-        <strong>Aviso de Limitações (Regra 9):</strong>
-        <p>Esta calculadora destina-se a prazos gerais. <strong>Não contempla</strong> os múltiplos prazos específicos previstos na lei para processos como:</p>
+    <div id="disclaimer" class="info-box warning" style="margin-top: 20px;">
+        <strong>Guia Rápido de Prazos Comuns</strong>
+        <p>Esta calculadora aplica a lógica de contagem correta. Insira o número de dias correspondente ao seu processo:</p>
         <ul>
-            <li>Processo Executivo (ex: oposição à execução, oposição à penhora).</li>
-            <li>Processo de Insolvência (ex: reclamação de créditos, oposição a listas).</li>
-            <li>Processo de Trabalho (que tem prazos frequentemente mais curtos).</li>
+            <li><strong>30 Dias:</strong> Contestação (Processo Cível Comum) , Recurso de Apelação (Cível, regra geral).</li>
+            <li><strong>20 Dias:</strong> Oposição à Execução , Recurso (Trabalho).</li>
+            <li><strong>15 Dias:</strong> Oposição à Injunção , Recurso de Apelação (Cível, processos urgentes).</li>
+            <li><strong>10 Dias:</strong> Contestação (Trabalho) , Oposição à Penhora , Recurso para o Constitucional, Recurso de Decisão dos Julgados de Paz.</li>
         </ul>
-        <p>Este resultado tem fins meramente informativos. Consulte sempre a legislação aplicável e/ou um profissional qualificado.</p>
+        <p><strong>Atenção:</strong> Esta lista não é exaustiva. Processos como Insolvência (CIRE) ou Contraordenações (RGCO) têm prazos próprios. O resultado desta calculadora tem fins meramente informativos. Consulte sempre a legislação aplicável e/ou um profissional qualificado.</p>
     </div>
 </div>
 
 <script>
     // --- DATA E FUNÇÕES UTILITÁRIAS ---
-    const parseDate = (s) => { const [y, m, d] = s.split('-'); return new Date(y, m - 1, d, 12); }; // Use noon to avoid timezone issues
+    const parseDate = (s) => { const [y, m, d] = s.split('-'); return new Date(y, m - 1, d, 12); };
     const formatDate = (d) => d.toLocaleDateString("pt-PT", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const toYYYYMMDD = (d) => d.toISOString().slice(0, 10);
     const addDays = (d, days) => { const date = new Date(d.valueOf()); date.setDate(date.getDate() + days); return date; };
 
     // --- BASE DE DADOS DE FERIADOS ---
-    // Fonte: regras.txt
     const municipalHolidaysData = {
         '01-13': ['Vila Nova de Poiares'], '01-15': ['Santa Cruz'], '01-20': ['Santa Maria da Feira'], '01-22': ['São Vicente'],
         '02-11': ['Monchique'],
@@ -145,21 +147,18 @@
 
     function getHolidays(year, comarca) {
         const easter = getEaster(year);
-        // Feriados Nacionais Obrigatórios (Fixos e Móveis)
         const holidays = [
             `${year}-01-01`, `${year}-04-25`, `${year}-05-01`, `${year}-06-10`, `${year}-08-15`, `${year}-10-05`, `${year}-11-01`, `${year}-12-01`, `${year}-12-08`, `${year}-12-25`,
-            toYYYYMMDD(addDays(easter, -47)), // Carnaval (dia não útil por encerramento dos tribunais)
-            toYYYYMMDD(addDays(easter, -2)),  // Sexta-Feira Santa
-            toYYYYMMDD(addDays(easter, 60)), // Corpo de Deus
+            toYYYYMMDD(addDays(easter, -47)),
+            toYYYYMMDD(addDays(easter, -2)),
+            toYYYYMMDD(addDays(easter, 60)),
         ];
-        // Feriados Municipais Móveis
         for(const ruleName in dynamicHolidayRules){
             const rule = dynamicHolidayRules[ruleName];
             if(rule.cities.includes(comarca)){
                 holidays.push(toYYYYMMDD(addDays(easter, rule.days)));
             }
         }
-        // Feriados Municipais Fixos
         for (const monthDay in municipalHolidaysData) {
             if (municipalHolidaysData[monthDay].includes(comarca)) {
                 holidays.push(`${year}-${monthDay}`);
@@ -172,21 +171,19 @@
         const easter = getEaster(year);
         const palmSunday = addDays(easter, -7);
         const easterMonday = addDays(easter, 1);
-        // Períodos de Férias Judiciais
         return [
-            { start: `${year - 1}-12-22`, end: `${year}-01-03` }, // Natal
-            { start: toYYYYMMDD(palmSunday), end: toYYYYMMDD(easterMonday) }, // Páscoa
-            { start: `${year}-07-16`, end: `${year}-08-31` }, // Verão
-            { start: `${year}-12-22`, end: `${year + 1}-01-03` } // Natal do ano seguinte
+            { start: `${year - 1}-12-22`, end: `${year}-01-03` },
+            { start: toYYYYMMDD(palmSunday), end: toYYYYMMDD(easterMonday) },
+            { start: `${year}-07-16`, end: `${year}-08-31` },
+            { start: `${year}-12-22`, end: `${year + 1}-01-03` }
         ];
     }
 
     function isBusinessDay(d, context) {
         const dateStr = toYYYYMMDD(d);
         const dayOfWeek = d.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) return false; // Exclui Sábados e Domingos
-        if (context.holidays.includes(dateStr)) return false; // Exclui feriados
-        // Para processos não urgentes, exclui férias judiciais
+        if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+        if (context.holidays.includes(dateStr)) return false;
         if (!context.isUrgente) {
             for (const vac of context.vacations) {
                 if (dateStr >= vac.start && dateStr <= vac.end) return false;
@@ -241,10 +238,12 @@
     }
 
     function calculate() {
+        const resultDiv = document.getElementById('result');
         const notificationMethod = document.getElementById('notification_method').value;
         const dateActoStr = document.getElementById('date_acto').value;
         if (!dateActoStr) {
-            document.getElementById('result').innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
+            resultDiv.innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
+            resultDiv.style.display = 'block';
             return;
         }
         const dateActo = parseDate(dateActoStr);
@@ -301,7 +300,7 @@
             }
         }
 
-        document.getElementById('result').innerHTML = `
+        resultDiv.innerHTML = `
             <h2>Resumo do Cálculo</h2>
 
             <h4>1. Notificação e Início do Prazo</h4>
@@ -318,15 +317,15 @@
             <div class="info-box details"><strong>Modo de Contagem Aplicado:</strong> ${calculationMode}</div>
             <hr>
 
-            <h4>3. Prazo de Graça (Art. 139º CPC)</h4>
+            <h4>3. Prazo de Multa (Art. 139º CPC)</h4>
             <div>
                 <p>O ato pode ser praticado nos 3 dias úteis seguintes mediante pagamento de multa:</p>
-                <p style="margin-left:20px;">1º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[0])}</span></p>
-                <p style="margin-left:20px;">2º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[1])}</span></p>
-                <p style="margin-left:20px;">3º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[2])}</span></p>
+                <p style="margin-left:20px;">1º Dia de Multa: <span class="res-value">${formatDate(gracePeriod[0])}</span></p>
+                <p style="margin-left:20px;">2º Dia de Multa: <span class="res-value">${formatDate(gracePeriod[1])}</span></p>
+                <p style="margin-left:20px;">3º Dia de Multa: <span class="res-value">${formatDate(gracePeriod[2])}</span></p>
             </div>
         `;
-        document.getElementById('disclaimer').style.display = 'block';
+        resultDiv.style.display = 'block';
     }
 
     function updateUiComponents() {
@@ -360,7 +359,9 @@
     function populateComarcas() {
         const select = document.getElementById('comarca');
         const allComarcas = new Set();
+        // Adiciona comarcas dos feriados fixos
         Object.values(municipalHolidaysData).forEach(arr => arr.forEach(city => allComarcas.add(city.trim())));
+        // Adiciona comarcas dos feriados móveis
         for(const ruleName in dynamicHolidayRules){
             dynamicHolidayRules[ruleName].cities.forEach(city => allComarcas.add(city.trim()));
         }
