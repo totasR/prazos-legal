@@ -1,388 +1,391 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Prazos Processuais - Portugal</title>
+    <title>Calculadora de Prazos Processuais (Portugal)</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1.5em; background-color: #f8f9fa; color: #212529; }
-        h1, h2 { color: #0056b3; text-align: center; }
-        h1 { margin-bottom: 0.1em; }
-        .subtitle { text-align: center; color: #6c757d; margin-top: 0; margin-bottom: 2em; }
-        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; align-items: start; }
-        .form-group, fieldset { display: flex; flex-direction: column; border: 1px solid #dee2e6; padding: 1em; border-radius: .3rem; background-color: #fff; }
-        fieldset { border: 1px solid #007bff; background-color: #f0f8ff; }
-        legend { font-weight: bold; color: #0056b3; padding: 0 .5em; font-size: 1.1em; }
-        label { margin-bottom: .5em; font-weight: 600; color: #495057; }
-        input, select { padding: .7em; font-size: 1em; border: 1px solid #ced4da; border-radius: .25rem; width: 100%; box-sizing: border-box; }
-        .full-width { grid-column: 1 / -1; }
-        .checkbox-group { display: flex; align-items: center; gap: .5em; margin-top: .5em; flex-direction: row; }
-        button { grid-column: 1 / -1; padding: .8em; font-size: 1.2em; font-weight: bold; color: #fff; background-color: #007bff; border: none; border-radius: .3rem; cursor: pointer; transition: background-color 0.2s; margin-top: 1.5em;}
-        button:hover { background-color: #0056b3; }
-        #result { margin-top: 2em; padding: 1.5em; background: #fff; border-left: 5px solid #007bff; border-radius: .3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        #result h2 { text-align: left; }
-        #result p { margin: 0.7em 0; font-size: 1.1em; line-height: 1.5; }
-        .res-label { font-weight: bold; color: #343a40; }
-        .res-value { color: #0056b3; font-weight: 500; }
-        .res-highlight { color: #dc3545; font-weight: bold; font-size: 1.2em; }
-        .info-box { margin-top: 1em; padding: 1em; background-color: #e9ecef; border-radius: .25rem; font-style: italic; font-size: 0.95em; text-align: center;}
-        footer { margin-top: 3em; padding-top: 1.5em; border-top: 1px solid #dee2e6; text-align: center; font-size: 0.9em; color: #6c757d; }
-
-        /* --- REFINAMENTO PARA RESPONSIVIDADE --- */
-        @media (max-width: 768px) {
-            .grid-container {
-                grid-template-columns: 1fr; /* Muda para uma única coluna em ecrãs estreitos */
-            }
-            body {
-                padding: 0 1em; /* Ajusta o espaçamento lateral para ecrãs pequenos */
-            }
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; margin: 20px; background-color: #f4f4f9; color: #333; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h1, h2, h3, h4 { color: #2c3e50; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="date"], select, input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #3498db; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #2980b9; }
+        #result { margin-top: 25px; padding: 20px; background-color: #ecf0f1; border-radius: 5px; border-left: 5px solid #3498db; }
+        .res-label { font-weight: bold; color: #555; }
+        .res-value { color: #2c3e50; }
+        .res-highlight { font-weight: bold; color: #e74c3c; background-color: #f9e3e3; padding: 3px 6px; border-radius: 4px;}
+        hr { border: 0; height: 1px; background: #ddd; margin: 20px 0; }
+        .info-box { padding: 15px; margin-top: 15px; border-radius: 4px; }
+        .info-box.details { background-color: #e8f4fd; border-left: 4px solid #3498db; }
+        .info-box.warning { background-color: #fef9e7; border-left: 4px solid #f39c12; }
+        .info-box.warning ul { margin-top: 10px; padding-left: 20px; }
+        small { color: #7f8c8d; display: block; margin-top: 5px; }
+        .dilação-box { padding: 15px; border: 1px dashed #bdc3c7; border-radius: 5px; margin-top: 10px; background: #fdfdfd;}
     </style>
 </head>
 <body>
-    <h1>⚖️ Calculadora de Prazos Processuais</h1>
-    <p class="subtitle">Atualizada com as regras de presunção, dilação correta e todos os feriados municipais.</p>
 
-    <div class="grid-container">
+<div class="container">
+    <h1>Calculadora de Prazos Processuais</h1>
 
-        <fieldset class="form-group full-width">
-            <legend>1. Início do Prazo</legend>
-            <div class="grid-container" style="padding:0; border:none; gap: 1em;">
-                <div class="form-group" style="padding:0; border:none;">
-                    <label for="notification_method">Método da Notificação / Citação:</label>
-                    <select id="notification_method">
-                        <option value="citius" selected>Notificação Eletrónica a Mandatário (via CITIUS)</option>
-                        <option value="postal_ar">Citação/Notificação por Carta Registada com A/R</option>
-                        <option value="postal_simples">Notificação por Carta Registada Simples</option>
-                        <option value="pessoal">Citação/Notificação Pessoal pelo Agente de Execução</option>
-                    </select>
-                </div>
-                <div class="form-group" style="padding:0; border:none;">
-                    <label for="date_acto" id="date_acto_label">Data do Envio (CITIUS):</label>
-                    <input type="date" id="date_acto">
-                </div>
-            </div>
-        </fieldset>
-        
-        <div class="form-group">
-            <label for="proc">Tipo de Processo:</label>
-            <select id="proc">
-                <option value="Civil">Cível / Trabalho</option>
-                <option value="Administrativo">Administrativo (Tribunal)</option>
-                <option value="Penal">Penal</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="prazo">Prazo Peremptório (dias):</label>
-            <input type="number" id="prazo" min="1" value="30">
-        </div>
-
-        <div class="form-group">
-            <label for="comarca">Feriado Municipal da Comarca:</label>
-            <select id="comarca">
-                <option value="nenhum" selected>Nenhum / Não aplicável</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label>Regime do Processo:</label>
-            <div class="checkbox-group">
-                <input type="checkbox" id="urg">
-                <label for="urg" style="font-weight:normal;">Marcar se for Processo Urgente</label>
-            </div>
-        </div>
-
-        <fieldset class="full-width" id="dilação_options">
-            <legend>2. Dilação (Aplicável apenas a CITAÇÃO)</legend>
-            <div class="checkbox-group">
-                <input type="checkbox" id="cit_pessoa_diversa">
-                <label for="cit_pessoa_diversa" style="font-weight:normal;">Citado em pessoa diversa do citando?</label>
-            </div>
-            <div class="form-group" style="margin-top: 1em; padding:0; border:none;">
-                <label for="loc_citacao">Local da Citação:</label>
-                <select id="loc_citacao">
-                    <option value="comarca">Na comarca da ação</option>
-                    <option value="fora_comarca">Fora da comarca da ação</option>
-                    <option value="regioes_autonomas">Entre Continente e Regiões Autónomas (ou entre ilhas)</option>
-                    <option value="estrangeiro">No Estrangeiro</option>
-                    <option value="edital">Citação Edital</option>
-                </select>
-            </div>
-        </fieldset>
+    <div class="form-group">
+        <label for="notification_method">Método de Notificação/Citação:</label>
+        <select id="notification_method">
+            <option value="citius" selected>Notificação Eletrónica (CITIUS/SITAF)</option>
+            <option value="postal_ar">Citação/Notificação por Carta Registada c/ Aviso de Receção</option>
+            <option value="postal_simples">Notificação por Carta Registada Simples</option>
+            <option value="pessoal">Citação/Notificação Pessoal (por Agente de Execução)</option>
+        </select>
     </div>
 
-    <button id="calc" onclick="calculate()">Calcular Prazo</button>
+    <div class="form-group">
+        <label id="date_acto_label" for="date_acto">Data do Envio (CITIUS):</label>
+        <input type="date" id="date_acto">
+    </div>
+
+    <div class="form-group">
+        <label for="prazo">Prazo Processual (dias):</label>
+        <input type="number" id="prazo" value="20" min="1">
+    </div>
+
+    <div class="form-group">
+        <label for="proc">Natureza do Processo:</label>
+        <select id="proc">
+            <option value="Cível/Admin" selected>Cível / Administrativo / Trabalho (Não Urgente)</option>
+            <option value="Penal">Penal</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="comarca">Comarca do Processo:</label>
+        <select id="comarca"></select>
+        <small><strong>Importante:</strong> A seleção da comarca é crucial para contabilizar corretamente o feriado municipal.</small>
+    </div>
+
+    <div class="form-group">
+        <input type="checkbox" id="urg" name="urg">
+        <label for="urg" style="display: inline-block;">Marcar se o processo for Urgente (não suspende em férias judiciais)</label>
+    </div>
+
+    <div id="dilação_options" class="dilação-box" style="display: none;">
+        <h4>Opções de Dilação (Art. 245º CPC)</h4>
+        <small>Apenas aplicável a citação/notificação pessoal ou por carta com A.R.</small>
+        <div class="form-group" style="margin-top: 15px;">
+            <input type="checkbox" id="cit_pessoa_diversa">
+            <label for="cit_pessoa_diversa" style="display: inline-block;">Citação feita em pessoa diversa do citando (acresce 5 dias)</label>
+        </div>
+        <div class="form-group">
+            <label for="loc_citacao">Local da Citação:</label>
+            <select id="loc_citacao">
+                <option value="na_comarca" selected>Na área da comarca</option>
+                <option value="fora_comarca">Fora da área da comarca (+5 dias)</option>
+                <option value="regioes_autonomas">Nas Regiões Autónomas (+15 dias)</option>
+                <option value="estrangeiro">No estrangeiro (+30 dias)</option>
+            </select>
+        </div>
+    </div>
+
+    <button onclick="calculate()">Calcular Prazo</button>
 
     <div id="result"></div>
 
-    <footer>
-        <p><strong>AVISO LEGAL IMPORTANTE:</strong> Esta ferramenta é um auxiliar de cálculo e <strong>NÃO DISPENSA</strong> a consulta da legislação aplicável nem o parecer de um advogado ou solicitador.</p>
-        <p>A sua utilização é da exclusiva responsabilidade do utilizador. A contagem não abrange regimes processuais especiais (ex: Processo Executivo, Processo de Insolvência, etc.) que possam ter regras próprias.</p>
-    </footer>
+    <div id="disclaimer" class="info-box warning" style="display: none; margin-top: 20px;">
+        <strong>Aviso de Limitações (Regra 9):</strong>
+        <p>Esta calculadora destina-se a prazos gerais. <strong>Não contempla</strong> os múltiplos prazos específicos previstos na lei para processos como:</p>
+        <ul>
+            <li>Processo Executivo (ex: oposição à execução, oposição à penhora).</li>
+            <li>Processo de Insolvência (ex: reclamação de créditos, oposição a listas).</li>
+            <li>Processo de Trabalho (que tem prazos frequentemente mais curtos).</li>
+        </ul>
+        <p>Este resultado tem fins meramente informativos. Consulte sempre a legislação aplicável e/ou um profissional qualificado.</p>
+    </div>
+</div>
 
-    <script>
-        // --- DATA E FUNÇÕES UTILITÁRIAS ---
-        const parseDate = (s) => { const [y, m, d] = s.split('-'); return new Date(y, m - 1, d); };
-        const formatDate = (d) => d.toLocaleDateString("pt-PT", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const toYYYYMMDD = (d) => d.toISOString().slice(0, 10);
-        const addDays = (d, days) => { const date = new Date(d.valueOf()); date.setDate(date.getDate() + days); return date; };
+<script>
+    // --- DATA E FUNÇÕES UTILITÁRIAS ---
+    const parseDate = (s) => { const [y, m, d] = s.split('-'); return new Date(y, m - 1, d, 12); }; // Use noon to avoid timezone issues
+    const formatDate = (d) => d.toLocaleDateString("pt-PT", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const toYYYYMMDD = (d) => d.toISOString().slice(0, 10);
+    const addDays = (d, days) => { const date = new Date(d.valueOf()); date.setDate(date.getDate() + days); return date; };
 
-        // --- BASE DE DADOS DE FERIADOS ---
-        const municipalHolidaysData = {
-            '01-13': ['Vila Nova de Poiares'], '01-15': ['Santa Cruz'], '01-20': ['Santa Maria da Feira'], '01-22': ['São Vicente'],
-            '02-11': ['Monchique'],
-            '03-19': ['Santarém', 'Vizela'],
-            '04-11': ['Miranda do Corvo'],
-            '05-12': ['Aveiro', 'Miranda do Douro'], '05-20': ['Vinhais'], '05-22': ['Velas'], '05-23': ['Covilhã'], '05-25': ['Santana'], '05-29': ['Cantanhede'],
-            '06-13': ['Alfândega da Fé', 'Alvaiázere', 'Estarreja', 'Proença-a-Nova', 'Reguengos de Monsaraz', 'Vale de Cambra', 'Vila Nova de Famalicão', 'Vila Real de Santo António'],
-            '06-24': ['Açores (Região)', 'Alcácer do Sal', 'Alcochete', 'Almada', 'Almodôvar', 'Angra do Heroísmo', 'Armamar', 'Arronches', 'Braga', 'Bragança', 'Calheta (Madeira)', 'Castelo de Paiva', 'Castro Marim', 'Cinfães', 'Figueira da Foz', 'Figueiró dos Vinhos', 'Guimarães', 'Horta', 'Lajes das Flores', 'Lourinhã', 'Mértola', 'Moimenta da Beira', 'Moura', 'Nisa', 'Oeiras', 'Porto', 'Porto Santo', 'Póvoa de Varzim', 'Santa Cruz da Graciosa', 'São João da Madeira', 'São Roque do Pico', 'Sertã', 'Setúbal', 'Tabuaço', 'Tavira', 'Valongo', 'Vila do Conde', 'Vila Franca do Campo', 'Vila Nova de Gaia', 'Vila Viçosa'],
-            '06-29': ['Barreiro', 'Castro Verde', 'Évora', 'Lagoa (Açores)', 'Montemor-o-Novo', 'Nelas', 'Penedono', 'Porto de Mós', 'Póvoa de Lanhoso', 'Ribeira Brava', 'Seixal', 'Sintra', 'Sobral de Monte Agraço', 'Terras de Bouro'],
-            '07-04': ['Castanheira de Pera'], '07-11': ['Tábua'], '07-16': ['Ponta Delgada'], '07-22': ['Madalena', 'Porto Moniz'], '07-25': ['Baião', 'Celorico da Beira', 'Entroncamento', 'Fornos de Algodres', 'Fundão', 'Lagoa (Algarve)', 'Oliveira de Frades', 'Pedrógão Grande', 'Santiago do Cacém', 'Seia', 'Sernancelhe', 'Vila do Bispo'],
-            '08-10': ['Amarante'], '08-16': ['São Roque do Pico'], '08-20': ['Viana do Castelo'], '08-21': ['Funchal'], '08-22': ['Corvo'], '08-24': ['Pampilhosa da Serra'], '08-29': ['Alcofra (Vouzela)'],
-            '09-07': ['Montemor-o-Velho'], '09-08': ['Alandroal', 'Arcos de Valdevez', 'Boticas', 'Cadaval', 'Chaves', 'Fafe', 'Lamego', 'Leiria', 'Mangualde', 'Marco de Canaveses', 'Marvão', 'Mira', 'Mogadouro', 'Montalegre', 'Monte Real', 'Nazaré', 'Odemira', 'Ourique', 'Paredes de Coura', 'Pinhel', 'Ponta do Sol', 'Portalegre', 'Sabugal', 'Viseu'],
-            '09-15': ['Olhão'], '09-21': ['Machico', 'Palmela'], '09-29': ['Fornos de Algodres', 'Mortágua', 'Tarouca', 'Vila Nova de Cerveira'],
-            '10-04': ['Barrancos'], '10-22': ['Vila Pouca de Aguiar'],
-            '11-11': ['Águeda', 'Alijó', 'Gavião', 'Meda', 'Penafiel', 'Pombal', 'Redondo', 'Rio Maior', 'Sabrosa', 'Santa Cruz da Graciosa', 'Torre de Moncorvo', 'Trancoso', 'Vila de Rei', 'Vila do Porto', 'Vila Verde'],
-            '11-25': ['Caldas da Rainha'], '11-30': ['Espinho', 'Gondomar', 'Guimarães', 'Mondim de Basto', 'Sátão', 'Valpaços'],
-            '12-26': ['Madeira (Região)']
-        };
-        
-        function getEaster(year) {
-            const f = Math.floor, G = year % 19, C = f(year / 100), H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30, I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11)), J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7, L = I - J, month = 3 + f((L + 40) / 44), day = L + 28 - 31 * f(month / 4);
-            return new Date(year, month - 1, day, 12);
-        }
+    // --- BASE DE DADOS DE FERIADOS ---
+    // Fonte: regras.txt
+    const municipalHolidaysData = {
+        '01-13': ['Vila Nova de Poiares'], '01-15': ['Santa Cruz'], '01-20': ['Santa Maria da Feira'], '01-22': ['São Vicente'],
+        '02-11': ['Monchique'],
+        '03-19': ['Santarém', 'Vizela'],
+        '04-11': ['Miranda do Corvo'],
+        '05-12': ['Aveiro', 'Miranda do Douro'], '05-20': ['Vinhais'], '05-22': ['Velas'], '05-23': ['Covilhã'], '05-25': ['Santana'], '05-29': ['Cantanhede'],
+        '06-13': ['Alfândega da Fé', 'Alvaiázere', 'Estremoz', 'Proença-a-Nova', 'Reguengos de Monsaraz', 'Vale de Cambra', 'Vila Nova de Famalicão', 'Vila Real de Santo António'],
+        '06-24': ['Açores (Região Autónoma)', 'Alcácer do Sal', 'Alcochete', 'Almada', 'Almodôvar', 'Angra do Heroísmo', 'Armamar', 'Arronches', 'Braga', 'Bragança', 'Calheta (Madeira)', 'Castelo de Paiva', 'Castro Marim', 'Cinfães', 'Figueira da Foz', 'Figueiró dos Vinhos', 'Funchal', 'Guimarães', 'Horta', 'Lajes das Flores', 'Lourinhã', 'Mértola', 'Moimenta da Beira', 'Moura', 'Nisa', 'Oeiras', 'Porto', 'Porto Santo', 'Póvoa de Varzim', 'Santa Cruz da Graciosa', 'São João da Madeira', 'São Roque do Pico', 'Sertã', 'Setúbal', 'Tabuaço', 'Tavira', 'Valongo', 'Vila do Conde', 'Vila Franca do Campo', 'Vila Nova de Gaia', 'Vila Viçosa'],
+        '06-29': ['Barreiro', 'Castro Verde', 'Évora', 'Lagoa (Açores)', 'Montemor-o-Novo', 'Nelas', 'Penedono', 'Porto de Mós', 'Póvoa de Lanhoso', 'Ribeira Brava', 'Seixal', 'Sintra', 'Sobral de Monte Agraço', 'Terras de Bouro'],
+        '07-04': ['Castanheira de Pera'], '07-11': ['Tábua'], '07-16': ['Ponta Delgada'], '07-22': ['Madalena', 'Porto Moniz'], '07-25': ['Baião', 'Celorico da Beira', 'Entroncamento', 'Fornos de Algodres', 'Fundão', 'Lagoa (Algarve)', 'Oliveira de Frades', 'Pedrógão Grande', 'Santiago do Cacém', 'Seia', 'Sernancelhe', 'Vila do Bispo'],
+        '08-10': ['Amarante'], '08-16': ['São Roque do Pico'], '08-20': ['Viana do Castelo'], '08-21': ['Funchal'], '08-22': ['Corvo'], '08-24': ['Pampilhosa da Serra'], '08-29': ['Alcofra (Vouzela)'],
+        '09-07': ['Montemor-o-Velho'], '09-08': ['Alandroal', 'Arcos de Valdevez', 'Boticas', 'Cadaval', 'Chaves', 'Fafe', 'Lamego', 'Leiria', 'Mangualde', 'Marco de Canaveses', 'Marvão', 'Mira', 'Mogadouro', 'Montalegre', 'Monte Real', 'Nazaré', 'Odemira', 'Ourique', 'Paredes de Coura', 'Pinhel', 'Ponta do Sol', 'Portalegre', 'Sabugal', 'Viseu'],
+        '09-15': ['Olhão'], '09-21': ['Machico', 'Palmela'], '09-29': ['Fornos de Algodres', 'Mortágua', 'Tarouca', 'Vila Nova de Cerveira'],
+        '10-04': ['Barrancos'], '10-22': ['Vila Pouca de Aguiar'],
+        '11-11': ['Águeda', 'Alijó', 'Gavião', 'Meda', 'Penafiel', 'Pombal', 'Redondo', 'Rio Maior', 'Sabrosa', 'Santa Cruz da Graciosa', 'Torre de Moncorvo', 'Trancoso', 'Vila de Rei', 'Vila do Porto', 'Vila Verde'],
+        '11-25': ['Caldas da Rainha'], '11-30': ['Espinho', 'Gondomar', 'Guimarães', 'Mondim de Basto', 'Sátão', 'Valpaços'],
+        '12-26': ['Madeira (Região Autónoma)']
+    };
+    const dynamicHolidayRules = {
+         'easter_monday': { days: 1, cities: ['Avis', 'Borba', 'Caminha', 'Constância', 'Crato', 'Freixo de Espada à Cinta', 'Ílhavo', 'Mação', 'Penamacor', 'Ponte de Sor', 'Portel', 'Redondo', 'Sousel'] },
+         'ascension_thursday': { days: 39, cities: ['Alcanena', 'Alenquer', 'Almeirim', 'Anadia', 'Arganil', 'Arruda dos Vinhos', 'Azambuja', 'Beja', 'Benavente', 'Cartaxo', 'Chamusca', 'Estarreja', 'Golegã', 'Loulé', 'Mafra', 'Mealhada', 'Melgaço', 'Monforte', 'Mortágua', 'Oliveira do Bairro', 'Oliveira do Hospital', 'Santa Comba Dão', 'Salvaterra de Magos', 'Sobral de Monte Agraço', 'Tábua', 'Torres Novas', 'Vagos', 'Vidigueira', 'Vila Franca de Xira'] },
+         'monday_after_pentecost': { days: 50, cities: ['Alijó', 'Calheta (Açores)', 'Ferreira do Zêzere', 'Horta', 'Lajes do Pico', 'Manteigas', 'Nordeste', 'Ponta do Sol', 'Povoação', 'Ribeira Grande', 'Santa Cruz das Flores', 'Torres Vedras', 'Vila do Porto', 'Vila Franca do Campo'] }
+    };
 
-        function getHolidays(year, comarca) {
-            const easter = getEaster(year);
-            const holidays = [
-                `${year}-01-01`, `${year}-04-25`, `${year}-05-01`, `${year}-06-10`, `${year}-08-15`, `${year}-10-05`, `${year}-11-01`, `${year}-12-01`, `${year}-12-08`, `${year}-12-25`,
-                toYYYYMMDD(addDays(easter, -47)), // Carnaval (Tribunais encerram por deliberação do CSM)
-                toYYYYMMDD(addDays(easter, -2)),  // Sexta-Feira Santa
-                toYYYYMMDD(addDays(easter, 60)), // Corpo de Deus
-            ];
+    function getEaster(year) {
+        const f = Math.floor, G = year % 19, C = f(year / 100), H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30, I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11)), J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7, L = I - J, month = 3 + f((L + 40) / 44), day = L + 28 - 31 * f(month / 4);
+        return new Date(year, month - 1, day, 12);
+    }
 
-            // Adicionar Feriados Municipais Dinâmicos (baseados na Páscoa)
-            const dynamicHolidayRules = {
-                1: ['Avis', 'Borba', 'Caminha', 'Constância', 'Crato', 'Freixo de Espada à Cinta', 'Ílhavo', 'Mação', 'Penamacor', 'Ponte de Sor', 'Portel', 'Redondo', 'Sousel'], // Segunda-feira de Páscoa
-                39: ['Alcanena', 'Alenquer', 'Almeirim', 'Anadia', 'Arganil', 'Arruda dos Vinhos', 'Azambuja', 'Beja', 'Benavente', 'Cartaxo', 'Chamusca', 'Estarreja', 'Golegã', 'Loulé', 'Mafra', 'Mealhada', 'Melgaço', 'Monforte', 'Mortágua', 'Oliveira do Bairro', 'Oliveira do Hospital', 'Santa Comba Dão', 'Salvaterra de Magos', 'Sobral de Monte Agraço', 'Tábua', 'Torres Novas', 'Vagos', 'Vidigueira', 'Vila Franca de Xira'], // Quinta-feira da Ascensão
-                50: ['Alijó', 'Calheta (Açores)', 'Ferreira do Zêzere', 'Horta', 'Lajes do Pico', 'Manteigas', 'Nordeste', 'Ponta do Sol', 'Povoação', 'Ribeira Grande', 'Santa Cruz das Flores', 'Torres Vedras', 'Vila do Porto', 'Vila Franca do Campo'] // Segunda-feira de Pentecostes
-            };
-
-            for(const daysToAdd in dynamicHolidayRules){
-                if(dynamicHolidayRules[daysToAdd].includes(comarca)){
-                    holidays.push(toYYYYMMDD(addDays(easter, parseInt(daysToAdd))));
-                }
+    function getHolidays(year, comarca) {
+        const easter = getEaster(year);
+        // Feriados Nacionais Obrigatórios (Fixos e Móveis)
+        const holidays = [
+            `${year}-01-01`, `${year}-04-25`, `${year}-05-01`, `${year}-06-10`, `${year}-08-15`, `${year}-10-05`, `${year}-11-01`, `${year}-12-01`, `${year}-12-08`, `${year}-12-25`,
+            toYYYYMMDD(addDays(easter, -47)), // Carnaval (dia não útil por encerramento dos tribunais)
+            toYYYYMMDD(addDays(easter, -2)),  // Sexta-Feira Santa
+            toYYYYMMDD(addDays(easter, 60)), // Corpo de Deus
+        ];
+        // Feriados Municipais Móveis
+        for(const ruleName in dynamicHolidayRules){
+            const rule = dynamicHolidayRules[ruleName];
+            if(rule.cities.includes(comarca)){
+                holidays.push(toYYYYMMDD(addDays(easter, rule.days)));
             }
-            
-            // Adicionar Feriados Municipais Fixos
-            for (const monthDay in municipalHolidaysData) {
-                if (municipalHolidaysData[monthDay].includes(comarca)) {
-                    holidays.push(`${year}-${monthDay}`);
-                }
+        }
+        // Feriados Municipais Fixos
+        for (const monthDay in municipalHolidaysData) {
+            if (municipalHolidaysData[monthDay].includes(comarca)) {
+                holidays.push(`${year}-${monthDay}`);
             }
-            return holidays;
         }
+        return holidays;
+    }
 
-        function getJudicialVacations(year) {
-            const easter = getEaster(year); const palmSunday = addDays(easter, -7); const easterMonday = addDays(easter, 1);
-            return [
-                { start: `${year - 1}-12-22`, end: `${year}-01-03` }, { start: toYYYYMMDD(palmSunday), end: toYYYYMMDD(easterMonday) },
-                { start: `${year}-07-16`, end: `${year}-08-31` }, { start: `${year}-12-22`, end: `${year + 1}-01-03` }
-            ];
-        }
+    function getJudicialVacations(year) {
+        const easter = getEaster(year);
+        const palmSunday = addDays(easter, -7);
+        const easterMonday = addDays(easter, 1);
+        // Períodos de Férias Judiciais
+        return [
+            { start: `${year - 1}-12-22`, end: `${year}-01-03` }, // Natal
+            { start: toYYYYMMDD(palmSunday), end: toYYYYMMDD(easterMonday) }, // Páscoa
+            { start: `${year}-07-16`, end: `${year}-08-31` }, // Verão
+            { start: `${year}-12-22`, end: `${year + 1}-01-03` } // Natal do ano seguinte
+        ];
+    }
 
-        function isBusinessDay(d, context) {
-            const dateStr = toYYYYMMDD(d);
-            const dayOfWeek = d.getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) return false;
-            if (context.holidays.includes(dateStr)) return false;
-            if (!context.isUrgente) {
-                for (const vac of context.vacations) {
-                    if (dateStr >= vac.start && dateStr <= vac.end) return false;
-                }
+    function isBusinessDay(d, context) {
+        const dateStr = toYYYYMMDD(d);
+        const dayOfWeek = d.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) return false; // Exclui Sábados e Domingos
+        if (context.holidays.includes(dateStr)) return false; // Exclui feriados
+        // Para processos não urgentes, exclui férias judiciais
+        if (!context.isUrgente) {
+            for (const vac of context.vacations) {
+                if (dateStr >= vac.start && dateStr <= vac.end) return false;
             }
-            return true;
         }
-        
-        function getStartDate(method, dateActo, context) {
-            let dataPresuncao;
-            let explanation = "";
-            let diaContagem = new Date(dateActo.valueOf());
+        return true;
+    }
+
+    function getStartDate(method, dateActo, context) {
+        let dataPresuncao;
+        let explanation = "";
+
+        // Notificação Eletrónica ou Carta Simples
+        if (method === 'citius' || method === 'postal_simples') {
+            explanation = `Notificação presume-se feita no 3º dia útil seguinte (Art. 248º/249º CPC):`;
             let businessDaysFound = 0;
-
-            switch (method) {
-                case 'citius':
-                case 'postal_simples':
-                    while (businessDaysFound < 3) {
-                        diaContagem = addDays(diaContagem, 1);
-                        if (isBusinessDay(diaContagem, { ...context, isUrgente: false })) {
-                            businessDaysFound++;
-                        }
-                    }
-                    dataPresuncao = new Date(diaContagem.valueOf());
-                    while(!isBusinessDay(dataPresuncao, { ...context, isUrgente: false })) {
-                        dataPresuncao = addDays(dataPresuncao, 1);
-                    }
-                    explanation = `Presunção da notificação no 3º dia útil (Art. 248º CPC):`;
-                    break;
-                case 'postal_ar':
-                case 'pessoal':
-                    dataPresuncao = dateActo;
-                    explanation = `Ato pessoal, notificação considera-se feita na data:`;
-                    break;
-            }
-            const dataInicioPrazo = addDays(dataPresuncao, 1);
-            return { dataPresuncao, dataInicioPrazo, explanation };
-        }
-
-        function calculateDilacao() {
-            let dilação = 0;
-            // A dilação aplica-se à CITAÇÃO, não à notificação genérica.
-            // Para simplificar, assumimos que o utilizador sabe que só deve preencher isto em caso de citação.
-            const pessoaDiversa = document.getElementById('cit_pessoa_diversa').checked;
-            const local = document.getElementById('loc_citacao').value;
-
-            if (pessoaDiversa) { dilação += 5; }
-
-            switch (local) {
-                case 'fora_comarca':       dilação += 5; break;
-                case 'regioes_autonomas':  dilação += 15; break;
-                case 'estrangeiro':
-                case 'edital':             dilação += 30; break;
-            }
-            return dilação;
-        }
-
-        function calculate() {
-            const notificationMethod = document.getElementById('notification_method').value;
-            const dateActoStr = document.getElementById('date_acto').value;
-            if (!dateActoStr) {
-                document.getElementById('result').innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
-                return;
-            }
-            
-            const dateActo = parseDate(dateActoStr);
-            const year = dateActo.getFullYear();
-            const yearPlusOne = year + 1;
-
-            const procType = document.getElementById('proc').value;
-            const diasPrazoBase = parseInt(document.getElementById('prazo').value) || 1;
-            const isUrgente = document.getElementById('urg').checked;
-            const comarca = document.getElementById('comarca').value;
-
-            const context = {
-                isUrgente,
-                holidays: [...getHolidays(year, comarca), ...getHolidays(yearPlusOne, comarca)],
-                vacations: [...getJudicialVacations(year), ...getJudicialVacations(yearPlusOne)]
-            };
-
-            const { dataPresuncao, dataInicioPrazo, explanation } = getStartDate(notificationMethod, dateActo, context);
-
-            const diasDilacao = calculateDilacao();
-            const prazoTotal = diasPrazoBase + diasDilacao;
-            let dataFinal;
-            let calculationMode;
-            
-            if (procType === 'Penal' && !isUrgente) {
-                calculationMode = `REGIME PENAL GERAL (Art. 104.º CPP) - Contagem contínua (calendário), com transferência do termo para o 1º dia útil seguinte.`;
-                let diaContagem = new Date(dataInicioPrazo.valueOf());
-                dataFinal = addDays(diaContagem, prazoTotal - 1); 
-
-                while (!isBusinessDay(dataFinal, context)) {
-                    dataFinal = addDays(dataFinal, 1);
-                }
-            } else {
-                let diaContagem = new Date(dataInicioPrazo.valueOf());
-                let prazoCount = 1;
-                while (prazoCount < prazoTotal) {
-                    diaContagem = addDays(diaContagem, 1);
-                    if (isBusinessDay(diaContagem, context)) {
-                        prazoCount++;
-                    }
-                }
-                dataFinal = diaContagem;
-
-                while (!isBusinessDay(dataFinal, context)) {
-                     dataFinal = addDays(dataFinal, 1);
-                }
-                
-                calculationMode = isUrgente ?
-                    `REGIME URGENTE - Contagem em dias úteis, sem suspensão em férias judiciais.` :
-                    `REGIME CÍVEL / ADMINISTRATIVO (Art. 138.º CPC) - Contagem em dias úteis, com suspensão em férias judiciais.`;
-            }
-
-            const gracePeriod = [];
-            let lastDay = new Date(dataFinal.valueOf());
-            let graceCount = 0;
-            while (graceCount < 3) {
-                lastDay = addDays(lastDay, 1);
-                if (isBusinessDay(lastDay, context)) {
-                    graceCount++;
-                    gracePeriod.push(lastDay);
+            let checkDay = new Date(dateActo.valueOf());
+            while (businessDaysFound < 3) {
+                checkDay = addDays(checkDay, 1);
+                // A presunção conta-se sempre por dias úteis, mesmo em processo urgente (natureza do ato de notificação)
+                if (isBusinessDay(checkDay, { ...context, isUrgente: false })) {
+                    businessDaysFound++;
                 }
             }
-
-            document.getElementById('result').innerHTML = `
-                <h2>Resumo do Cálculo</h2>
-                <p><span class="res-label">1. Ato e Notificação:</span> <span class="res-value">${formatDate(dateActo)}</span></p>
-                <p><span class="res-label">${explanation}</span> <span class="res-value">${formatDate(dataPresuncao)}</span></p>
-                <p><span class="res-label">➡️ Início da Contagem do Prazo:</span> <span class="res-value">${formatDate(dataInicioPrazo)}</span></p>
-                <hr>
-                <p><span class="res-label">➕ Dilação (Art. 245º CPC):</span> <span class="res-value">${diasDilacao} dias</span></p>
-                <p><span class="res-label">⏳ Prazo Total (Base + Dilação):</span> <span class="res-value">${prazoTotal} dias</span></p>
-                <hr>
-                <p><span class="res-label">⏰ Termo do Prazo Peremptório:</span> <span class="res-highlight">${formatDate(dataFinal)}</span></p>
-                <div>
-                    <p><span class="res-label">✨ Prazo de Multa (Art. 139º CPC):</span></p>
-                    <p style="margin-left:20px;">1º Dia (c/ multa): <span class="res-value">${formatDate(gracePeriod[0])}</span></p>
-                    <p style="margin-left:20px;">2º Dia (c/ multa): <span class="res-value">${formatDate(gracePeriod[1])}</span></p>
-                    <p style="margin-left:20px;">3º Dia (c/ multa): <span class="res-value">${formatDate(gracePeriod[2])}</span></p>
-                </div>
-                <div class="info-box"><strong>Modo de Contagem:</strong> ${calculationMode}</div>
-            `;
-        }
-
-        function updateDateLabel() {
-            const method = document.getElementById('notification_method').value;
-            const label = document.getElementById('date_acto_label');
-            switch (method) {
-                case 'citius': label.textContent = 'Data do Envio (CITIUS):'; break;
-                case 'postal_ar': label.textContent = 'Data da Assinatura do Aviso de Receção:'; break;
-                case 'postal_simples': label.textContent = 'Data do Registo da Carta:'; break;
-                case 'pessoal': label.textContent = 'Data da Notificação Pessoal:'; break;
+            dataPresuncao = new Date(checkDay.valueOf());
+            // Se o 3º dia útil cair num dia que não é útil (feriado que calha a meio), transita para o seguinte
+            while(!isBusinessDay(dataPresuncao, { ...context, isUrgente: false })) {
+                dataPresuncao = addDays(dataPresuncao, 1);
             }
+        } else { // Citação/Notificação por AR ou Pessoal
+            dataPresuncao = dateActo;
+            explanation = `Notificação considera-se feita na data do ato (assinatura/ato pessoal):`;
         }
-        
-        function populateComarcas() {
-            const select = document.getElementById('comarca');
-            const allComarcas = new Set();
-            
-            // Feriados Fixos
-            Object.values(municipalHolidaysData).forEach(arr => arr.forEach(city => allComarcas.add(city)));
-            
-            // Feriados Dinâmicos
-            const dynamicHolidayRules = {
-                1: ['Avis', 'Borba', 'Caminha', 'Constância', 'Crato', 'Freixo de Espada à Cinta', 'Ílhavo', 'Mação', 'Penamacor', 'Ponte de Sor', 'Portel', 'Redondo', 'Sousel'],
-                39: ['Alcanena', 'Alenquer', 'Almeirim', 'Anadia', 'Arganil', 'Arruda dos Vinhos', 'Azambuja', 'Beja', 'Benavente', 'Cartaxo', 'Chamusca', 'Estarreja', 'Golegã', 'Loulé', 'Mafra', 'Mealhada', 'Melgaço', 'Monforte', 'Mortágua', 'Oliveira do Bairro', 'Oliveira do Hospital', 'Santa Comba Dão', 'Salvaterra de Magos', 'Sobral de Monte Agraço', 'Tábua', 'Torres Novas', 'Vagos', 'Vidigueira', 'Vila Franca de Xira'],
-                50: ['Alijó', 'Calheta (Açores)', 'Ferreira do Zêzere', 'Horta', 'Lajes do Pico', 'Manteigas', 'Nordeste', 'Ponta do Sol', 'Povoação', 'Ribeira Grande', 'Santa Cruz das Flores', 'Torres Vedras', 'Vila do Porto', 'Vila Franca do Campo']
-            };
-            Object.values(dynamicHolidayRules).forEach(arr => arr.forEach(city => allComarcas.add(city)));
+        // O prazo começa a correr no dia a seguir à data da presunção ou do ato
+        const dataInicioPrazo = addDays(dataPresuncao, 1);
+        return { dataPresuncao, dataInicioPrazo, explanation };
+    }
 
-            const sortedComarcas = Array.from(allComarcas).sort((a, b) => a.localeCompare(b));
-            sortedComarcas.forEach(city => {
-                const option = document.createElement('option');
-                option.value = city;
-                option.textContent = city;
-                select.appendChild(option);
-            });
+    function calculateDilacao() {
+        if (document.getElementById('dilação_options').style.display === 'none') {
+            return 0;
         }
-        
-        window.onload = () => {
-            document.getElementById('date_acto').value = toYYYYMMDD(new Date());
-            document.getElementById('notification_method').addEventListener('change', updateDateLabel);
-            populateComarcas();
+        let dilação = 0;
+        const pessoaDiversa = document.getElementById('cit_pessoa_diversa').checked;
+        const local = document.getElementById('loc_citacao').value;
+
+        switch (local) {
+            case 'fora_comarca':       dilação += 5; break;  //
+            case 'regioes_autonomas':  dilação += 15; break;
+            case 'estrangeiro':        dilação += 30; break;
+        }
+        // A dilação por pessoa diversa é CUMULATIVA
+        if (pessoaDiversa) {
+            dilação += 5; //
+        }
+        return dilação;
+    }
+
+    function calculate() {
+        const notificationMethod = document.getElementById('notification_method').value;
+        const dateActoStr = document.getElementById('date_acto').value;
+        if (!dateActoStr) {
+            document.getElementById('result').innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
+            return;
+        }
+        const dateActo = parseDate(dateActoStr);
+        const year = dateActo.getFullYear();
+        const procType = document.getElementById('proc').value;
+        const diasPrazoBase = parseInt(document.getElementById('prazo').value) || 1;
+        const isUrgente = document.getElementById('urg').checked;
+        const comarca = document.getElementById('comarca').value;
+
+        const context = {
+            isUrgente,
+            // Carregar feriados de 2 anos para cobrir prazos que atravessam o fim do ano
+            holidays: [...getHolidays(year, comarca), ...getHolidays(year + 1, comarca)],
+            vacations: [...getJudicialVacations(year), ...getJudicialVacations(year + 1)]
         };
-    </script>
+
+        const { dataPresuncao, dataInicioPrazo, explanation } = getStartDate(notificationMethod, dateActo, context);
+        const diasDilacao = calculateDilacao();
+        const prazoTotal = diasPrazoBase + diasDilacao;
+
+        let dataFinal;
+        let calculationMode;
+        let diaContagem = new Date(dataInicioPrazo.valueOf());
+
+        if (procType === 'Penal') {
+            calculationMode = `Regime Penal (Art. 104.º CPP): Contagem contínua. Se o termo cair em dia não útil, transfere-se para o 1º dia útil seguinte.`;
+            dataFinal = addDays(diaContagem, prazoTotal - 1);
+            while (!isBusinessDay(dataFinal, { ...context, isUrgente: true })) { // Em penal, o termo transfere-se, mas a contagem não pára em férias
+                dataFinal = addDays(dataFinal, 1);
+            }
+        } else { // Cível, Administrativo, Trabalho (Regra Geral)
+            calculationMode = isUrgente ?
+                `Regime Urgente: Contagem em dias úteis, sem suspensão em férias judiciais.` :
+                `Regime Geral (Art. 138.º CPC): Contagem em dias úteis, com suspensão em férias judiciais.`;
+            let prazoCount = 0;
+            while (prazoCount < prazoTotal) {
+                if (isBusinessDay(diaContagem, context)) {
+                    prazoCount++;
+                }
+                if(prazoCount < prazoTotal) {
+                   diaContagem = addDays(diaContagem, 1);
+                }
+            }
+            dataFinal = diaContagem;
+        }
+
+        // Cálculo do Prazo de Graça (3 dias úteis)
+        const gracePeriod = [];
+        let lastDay = new Date(dataFinal.valueOf());
+        let graceCount = 0;
+        while (graceCount < 3) {
+            lastDay = addDays(lastDay, 1);
+            if (isBusinessDay(lastDay, context)) { // Contagem também em dias úteis
+                graceCount++;
+                gracePeriod.push(lastDay);
+            }
+        }
+
+        document.getElementById('result').innerHTML = `
+            <h2>Resumo do Cálculo</h2>
+
+            <h4>1. Notificação e Início do Prazo</h4>
+            <p><span class="res-label">Data do Ato (Envio/Assinatura):</span> <span class="res-value">${formatDate(dateActo)}</span></p>
+            <p><span class="res-label">${explanation}</span> <span class="res-value">${formatDate(dataPresuncao)}</span></p>
+            <p><span class="res-label">➡️ Início da Contagem do Prazo (dia útil seguinte):</span> <span class="res-value">${formatDate(dataInicioPrazo)}</span></p>
+            <hr>
+
+            <h4>2. Duração e Termo do Prazo</h4>
+            <p><span class="res-label">Prazo Base:</span> <span class="res-value">${diasPrazoBase} dias</span></p>
+            <p><span class="res-label">➕ Dilação (Art. 245º CPC):</span> <span class="res-value">${diasDilacao} dias</span></p>
+            <p><span class="res-label">⏳ Prazo Total a Contar:</span> <span class="res-value"><strong>${prazoTotal} dias</strong></span></p>
+            <p><span class="res-label">⏰ Termo do Prazo Peremptório:</span> <span class="res-highlight">${formatDate(dataFinal)}</span></p>
+            <div class="info-box details"><strong>Modo de Contagem Aplicado:</strong> ${calculationMode}</div>
+            <hr>
+
+            <h4>3. Prazo de Graça (Art. 139º CPC)</h4>
+            <div>
+                <p>O ato pode ser praticado nos 3 dias úteis seguintes mediante pagamento de multa:</p>
+                <p style="margin-left:20px;">1º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[0])}</span></p>
+                <p style="margin-left:20px;">2º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[1])}</span></p>
+                <p style="margin-left:20px;">3º Dia de Graça: <span class="res-value">${formatDate(gracePeriod[2])}</span></p>
+            </div>
+        `;
+        // Mostra o aviso de limitações após o cálculo
+        document.getElementById('disclaimer').style.display = 'block';
+    }
+
+    function updateUiComponents() {
+        const method = document.getElementById('notification_method').value;
+        const label = document.getElementById('date_acto_label');
+        const dilacaoOptions = document.getElementById('dilação_options');
+
+        switch (method) {
+            case 'citius': label.textContent = 'Data do Envio (CITIUS/SITAF):'; break;
+            case 'postal_ar': label.textContent = 'Data da Assinatura do Aviso de Receção:'; break;
+            case 'postal_simples': label.textContent = 'Data do Registo da Carta:'; break;
+            case 'pessoal': label.textContent = 'Data da Notificação/Citação Pessoal:'; break;
+        }
+
+        // Opções de Dilação só são visíveis para citação pessoal ou com AR
+        if (method === 'postal_ar' || method === 'pessoal') {
+            dilacaoOptions.style.display = 'block';
+        } else {
+            dilacaoOptions.style.display = 'none';
+        }
+    }
+
+    function populateComarcas() {
+        const select = document.getElementById('comarca');
+        const allComarcas = new Set();
+        Object.values(municipalHolidaysData).forEach(arr => arr.forEach(city => allComarcas.add(city.trim())));
+        for(const ruleName in dynamicHolidayRules){
+            dynamicHolidayRules[ruleName].cities.forEach(city => allComarcas.add(city.trim()));
+        }
+        const sortedComarcas = Array.from(allComarcas).sort((a, b) => a.localeCompare(b));
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = "";
+        defaultOption.textContent = "Selecione uma comarca (se aplicável)";
+        select.appendChild(defaultOption);
+
+        sortedComarcas.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city;
+            option.textContent = city;
+            select.appendChild(option);
+        });
+    }
+
+    window.onload = () => {
+        document.getElementById('date_acto').value = toYYYYMMDD(new Date());
+        document.getElementById('notification_method').addEventListener('change', updateUiComponents);
+        document.getElementById('proc').addEventListener('change', updateUiComponents);
+        populateComarcas();
+        updateUiComponents();
+    };
+</script>
+
 </body>
 </html>
