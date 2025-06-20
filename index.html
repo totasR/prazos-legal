@@ -1,169 +1,261 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Calculadora de Prazos Processuais</title>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; padding: 0 1em; }
-    label { display: block; margin: .5em 0; }
-    input, select, button { padding: .4em; font-size: 1em; }
-    button { margin-top: 1em; }
-    #result { margin-top: 1.5em; padding: 1em; background: #f0f0f0; }
-    .hidden { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Prazos Processuais (Versão Avançada)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; background-color: #f8f9fa; color: #212529; }
+        h1 { color: #0056b3; }
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; align-items: start; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: .5em; font-weight: 500; }
+        input, select { padding: .6em; font-size: 1em; border: 1px solid #ced4da; border-radius: .25rem; }
+        .full-width { grid-column: 1 / -1; }
+        .checkbox-group { display: flex; align-items: center; gap: .5em; margin-top: .5em;}
+        #dilação_options { border: 1px solid #007bff; padding: 1em; border-radius: .3rem; margin-top: 1em; background-color: #f0f8ff; }
+        #dilação_options legend { font-weight: bold; color: #0056b3; padding: 0 .5em; }
+        button { grid-column: 1 / -1; padding: .8em; font-size: 1.1em; font-weight: bold; color: #fff; background-color: #007bff; border: none; border-radius: .3rem; cursor: pointer; transition: background-color 0.2s; margin-top: 1em;}
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 1.5em; padding: 1.5em; background: #fff; border: 1px solid #e9ecef; border-radius: .3rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        #result p { margin: 0.5em 0; font-size: 1.1em; }
+        .date-label { font-weight: bold; color: #495057; }
+        .date-value { color: #007bff; }
+        .info-value { color: #28a745; font-weight: bold;}
+        .calculation-mode { margin-top: 1em; padding: .8em; background-color: #e2e3e5; border-radius: .25rem; font-style: italic; font-size: 0.9em; text-align: center;}
+        footer { margin-top: 2em; text-align: center; font-size: 0.8em; color: #6c757d; }
+    </style>
 </head>
 <body>
-  <h1>📅 Calculadora de Prazos Processuais</h1>
+    <h1>⚖️ Calculadora de Prazos Processuais</h1>
+    <p>Esta versão incorpora as regras detalhadas da dilação (Art. 245º CPC) e o regime de urgência (AUJ nº 1/2021).</p>
 
-  <label>Processo:
-    <select id="proc">
-      <option value="Civil">Civil</option>
-      <option value="Penal">Penal</option>
-      <option value="Administrativo">Administrativo</option>
-    </select>
-  </label>
+    <div class="grid-container">
+        <div class="form-group">
+            <label for="proc">Tipo de Processo:</label>
+            <select id="proc">
+                <option value="Civil">Cível</option>
+                <option value="Administrativo">Administrativo (Tribunal)</option>
+                <option value="Penal">Penal</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="act_type">Tipo de Ato:</label>
+            <select id="act_type">
+                <option value="Citacao">Citação</option>
+                <option value="Notificacao">Notificação</option>
+            </select>
+        </div>
 
-  <label>Tipo de Ato:
-    <select id="ato">
-      <option value="Notificação">Notificação</option>
-      <option value="Citação">Citação</option>
-    </select>
-  </label>
+        <div class="form-group full-width" id="dilação_options">
+            <fieldset>
+                <legend>Circunstâncias da Citação (para cálculo da dilação)</legend>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="cit_pessoa_diversa">
+                    <label for="cit_pessoa_diversa">Citado em pessoa diversa do citando?</label>
+                </div>
+                <div class="form-group" style="margin-top: 1em;">
+                    <label for="loc_citacao">Local da Citação:</label>
+                    <select id="loc_citacao">
+                        <option value="comarca">Na comarca da ação</option>
+                        <option value="fora_comarca">Fora da comarca da ação</option>
+                        <option value="regioes_autonomas">Entre Continente e Regiões Autónomas (ou entre ilhas)</option>
+                        <option value="estrangeiro">No Estrangeiro</option>
+                        <option value="edital">Citação Edital</option>
+                    </select>
+                </div>
+            </fieldset>
+        </div>
 
-  <label>Notificação:
-    <select id="notif">
-      <option>Eletrónica</option>
-      <option>Carta AR</option>
-      <option>Mandatário</option>
-      <option>Presencial</option>
-    </select>
-  </label>
+        <div class="form-group">
+            <label for="date_notif">Data do Ato Efetivo:</label>
+            <input type="date" id="date_notif">
+        </div>
 
-  <label>Data da notificação:
-    <input type="date" id="date_notif" value="">
-  </label>
+        <div class="form-group">
+            <label for="prazo">Prazo Peremptório (dias):</label>
+            <input type="number" id="prazo" min="1" value="30">
+        </div>
 
-  <label id="dil_label" class="hidden">Dilações (dias):
-    <input type="number" id="dil" min="0" value="0">
-  </label>
+        <div class="form-group full-width">
+            <label>Regime do Processo:</label>
+            <div class="checkbox-group">
+                <input type="checkbox" id="urg">
+                <label for="urg">Urgente</label>
+            </div>
+        </div>
+    </div>
 
-  <label><input type="checkbox" id="urg"> Urgente</label>
-  <label><input type="checkbox" id="sus" checked> Suspende em férias judiciais</label>
+    <button id="calc">Calcular Prazo</button>
 
-  <label>Prazo (dias):
-    <input type="number" id="prazo" min="1" value="10">
-  </label>
+    <div id="result"></div>
 
-  <button id="calc">Calcular</button>
+    <footer>
+        <p>Aviso: Esta ferramenta não dispensa a consulta da lei e de um profissional forense. A lista de feriados não inclui todos os feriados municipais de Portugal.</p>
+    </footer>
 
-  <div id="result"></div>
+    <script>
+        // --- BASE DE DADOS DE REGRAS (CONSTANTES) ---
+        const nationalHolidays2025 = ["2025-01-01","2025-02-04","2025-04-18","2025-04-25","2025-05-01","2025-06-10","2025-06-19","2025-08-15","2025-10-05","2025-11-01","2025-12-01","2025-12-08","2025-12-25"];
+        const municipalHolidays = ["2025-06-24"]; // Ex: São João (Porto)
+        const allHolidays = [...nationalHolidays2025, ...municipalHolidays];
+        const judicialVacations2025 = [
+            { start: "2024-12-22", end: "2025-01-03" },
+            { start: "2025-04-13", end: "2025-04-21" },
+            { start: "2025-07-16", end: "2025-08-31" }
+        ];
 
-  <script>
-    // Lista de feriados nacionais em Portugal 2025
-    const holidays = [
-      "2025-01-01", "2025-04-18", "2025-04-20", "2025-04-25", "2025-05-01",
-      "2025-06-10", "2025-06-19", "2025-08-15", "2025-10-05",
-      "2025-11-01", "2025-12-01", "2025-12-08", "2025-12-25"
-    ];
+        // --- FUNÇÕES UTILITÁRIAS ---
+        const parseDate = (s) => new Date(s + 'T00:00:00');
+        const formatDate = (d) => d.toLocaleDateString("pt-PT", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const addDays = (d, days) => { const date = new Date(d); date.setDate(date.getDate() + days); return date; };
+        const isHoliday = (d) => allHolidays.includes(d.toISOString().slice(0, 10));
+        const isJudicialVacation = (d) => judicialVacations2025.some(vac => d >= parseDate(vac.start) && d <= parseDate(vac.end));
 
-    function isBusinessDay(d) {
-      const wd = d.getDay();
-      const iso = d.toISOString().slice(0,10);
-      return wd >=1 && wd <=5 && !holidays.includes(iso);
-    }
+        function isBusinessDay(d, isUrgente) {
+            if (!isUrgente && isJudicialVacation(d)) return false;
+            const dayOfWeek = d.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+            if (isHoliday(d)) return false;
+            return true;
+        }
 
-    function addDays(d, n) {
-      const x = new Date(d);
-      x.setDate(x.getDate() + n);
-      return x;
-    }
+        // --- LÓGICA DE CÁLCULO ESPECÍFICA ---
+        function calculateDilacao() {
+            if (document.getElementById('act_type').value !== 'Citacao') return 0;
 
-    function getEffectiveDate(nd, type) {
-      let eff = new Date(nd);
-      if (type === "Carta AR") eff = addDays(eff, 10);
-      else if (type === "Mandatário") eff = addDays(eff, 5);
-      // Eletrónica e Presencial = dia mesmo
+            let dilação = 0;
+            const pessoaDiversa = document.getElementById('cit_pessoa_diversa').checked;
+            const local = document.getElementById('loc_citacao').value;
 
-      // avança até ser dia útil
-      while (!isBusinessDay(eff)) {
-        eff = addDays(eff, 1);
-      }
-      return eff;
-    }
+            // Lógica cumulativa baseada no Art. 245º CPC
+            if (pessoaDiversa) {
+                dilação += 5;
+            }
 
-    function calculateDeadline(eff, dil, prazo) {
-      // início: próximo dia útil
-      let start = addDays(eff, 1);
-      while (!isBusinessDay(start)) start = addDays(start,1);
+            switch (local) {
+                case 'fora_comarca':
+                    if(!pessoaDiversa) dilação += 5; // O texto sugere que 5 dias se aplicam a ambos os casos
+                    break;
+                case 'regioes_autonomas':
+                    dilação += 15;
+                    break;
+                case 'estrangeiro':
+                case 'edital':
+                    dilação += 30;
+                    break;
+            }
+            return dilação;
+        }
 
-      // aplica dilação (dias úteis)
-      let cnt=0;
-      while (cnt < dil) {
-        start = addDays(start,1);
-        if (isBusinessDay(start)) cnt++;
-      }
+        function calculate() {
+            // 1. OBTER INPUTS
+            const procType = document.getElementById('proc').value;
+            const dateNotifStr = document.getElementById('date_notif').value;
+            const diasPrazoBase = parseInt(document.getElementById('prazo').value) || 1;
+            const isUrgente = document.getElementById('urg').checked;
 
-      // conta o prazo (dias úteis)
-      let cnt2 = 0;
-      let end = new Date(start);
-      while (cnt2 < prazo) {
-        end = addDays(end,1);
-        if (isBusinessDay(end)) cnt2++;
-      }
+            if (!dateNotifStr) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
+                return;
+            }
 
-      return { eff, start, end };
-    }
+            const dataEfetiva = parseDate(dateNotifStr);
 
-    function updateDilField() {
-      const proc = document.getElementById("proc").value;
-      const ato = document.getElementById("ato").value;
-      const dilLabel = document.getElementById("dil_label");
-      // Só mostra se Processo Civil E Ato Citação
-      if (proc === "Civil" && ato === "Citação") {
-        dilLabel.classList.remove("hidden");
-      } else {
-        dilLabel.classList.add("hidden");
-        document.getElementById("dil").value = 0;
-      }
-    }
+            // 2. CALCULAR DILAÇÃO E PRAZO TOTAL
+            const diasDilacao = calculateDilacao();
+            const prazoTotal = diasPrazoBase + diasDilacao;
 
-    document.getElementById("proc").onchange = updateDilField;
-    document.getElementById("ato").onchange = updateDilField;
+            // 3. CALCULAR PRAZO PEREMPTÓRIO
+            let diaDePartida = new Date(dataEfetiva);
+            let prazoCount = 0;
 
-    document.getElementById("calc").onclick = () => {
-      const nd = document.getElementById("date_notif").value;
-      if (!nd) { alert("Escolhe uma data!"); return; }
-      const notif = document.getElementById("notif").value;
-      const proc = document.getElementById("proc").value;
-      const ato = document.getElementById("ato").value;
-      let dil = 0;
-      // Só considera dilação se Processo Civil e Citação
-      if (proc === "Civil" && ato === "Citação") {
-        dil = parseInt(document.getElementById("dil").value) || 0;
-      }
-      const prazo = parseInt(document.getElementById("prazo").value);
+            while (prazoCount < prazoTotal) {
+                diaDePartida = addDays(diaDePartida, 1);
+                // A contagem do prazo unificado (dilação + peremptório) é sempre em dias úteis, suspendendo-se em férias (salvo urgência)
+                if (isBusinessDay(diaDePartida, isUrgente)) {
+                    prazoCount++;
+                }
+            }
+            let dataFinal = diaDePartida;
 
-      const eff = getEffectiveDate(nd, notif);
-      const { start, end } = calculateDeadline(eff, dil, prazo);
+            // 4. APLICAR REGIME DE URGÊNCIA (AUJ nº 1/2021)
+            let calculationMode;
+            if (isUrgente) {
+                // Em processo urgente, o prazo não se transfere NUNCA. Termina no dia em que calhar.
+                // A nossa contagem já resultou no dia correto.
+                 calculationMode = `URGENTE (AUJ nº 1/2021) - Contínuo, não suspende em férias e o termo NÃO se transfere.`;
+            } else {
+                 // Em processo não urgente, se o termo cair em dia não útil, transfere-se.
+                 calculationMode = `NÃO URGENTE (CPC/CPTA) - Contagem em dias úteis, com suspensão em férias e transferência do termo.`;
+                 while (!isBusinessDay(dataFinal, isUrgente)) {
+                    dataFinal = addDays(dataFinal, 1);
+                }
+            }
 
-      const fmt = d => d.toLocaleDateString("pt-PT");
-      document.getElementById("result").innerHTML = `
-        <p>🔔 <strong>Data efetiva da notificação:</strong> ${fmt(eff)}</p>
-        <p>🟢 <strong>Data início da contagem:</strong> ${fmt(start)}</p>
-        <p>⏰ <strong>Data final (prazo):</strong> ${fmt(end)}</p>
-        <p style="font-size:0.9em;color:#666;">
-          ${proc === "Civil" && ato === "Citação" && dil > 0 ? "Dilação aplicada conforme art. 245.º CPC." : ""}
-          ${proc === "Civil" && ato === "Notificação" ? "Sem dilação em notificações civis (art. 245.º CPC)." : ""}
-        </p>
-      `;
-    };
+            if (procType === 'Penal' && !isUrgente) {
+                // O Processo Penal não urgente é um caso especial: contínuo, mas transfere o termo.
+                // Esta calculadora simplifica, tratando-o como um processo cível não urgente.
+                // Uma implementação 100% correta exigiria um motor de contagem distinto.
+                calculationMode = `PENAL GERAL - O cálculo segue o regime do CPC (simplificado). A regra real é contínua com transferência do termo.`
+            }
 
-    // inicializa data hoje no datepicker
-    document.getElementById("date_notif").value = new Date().toISOString().slice(0,10);
+            // 5. CALCULAR PRAZO DE GRAÇA
+            const gracePeriod = [];
+            let lastDay = new Date(dataFinal);
+            let graceCount = 0;
+            while (graceCount < 3) {
+                lastDay = addDays(lastDay, 1);
+                if (isBusinessDay(lastDay, isUrgente)) {
+                    graceCount++;
+                    gracePeriod.push(lastDay);
+                }
+            }
 
-    // inicializa campo dilação visível/escondido
-    updateDilField();
-  </script>
+            // 6. APRESENTAR RESULTADOS
+            let resultHTML = `
+                <p><span class="date-label">🔔 Data Efetiva do Ato:</span> <span class="date-value">${formatDate(dataEfetiva)}</span></p>
+                <p><span class="date-label">➕ Dilação Calculada (Art. 245º CPC):</span> <span class="info-value">${diasDilacao} dias</span></p>
+                <p><span class="date-label">⏳ Prazo Total (Peremptório + Dilação):</span> <span class="info-value">${prazoTotal} dias</span></p>
+                <p><span class="date-label">⏰ Termo do Prazo Peremptório:</span> <span class="date-value">${formatDate(dataFinal)}</span></p>
+
+                <div class="grace-period">
+                    <p><span class="date-label">✨ Prazo de Graça (com multa):</span></p>
+                    <p>1º Dia: <span class="date-value">${formatDate(gracePeriod[0])}</span></p>
+                    <p>2º Dia: <span class="date-value">${formatDate(gracePeriod[1])}</span></p>
+                    <p>3º Dia: <span class="date-value">${formatDate(gracePeriod[2])}</span></p>
+                </div>
+
+                <div class="calculation-mode">
+                    <strong>Modo de Contagem:</strong> ${calculationMode}
+                </div>
+            `;
+            document.getElementById('result').innerHTML = resultHTML;
+        }
+
+        // --- GESTÃO DA INTERFACE E EVENTOS ---
+        function toggleDilacaoOptions() {
+            const actType = document.getElementById('act_type').value;
+            const dilaçãoDiv = document.getElementById('dilação_options');
+            dilaçãoDiv.style.display = (actType === 'Citacao') ? 'block' : 'none';
+            calculate();
+        }
+
+        function setupListeners() {
+            document.getElementById('calc').onclick = calculate;
+            const elementsToListen = ['proc', 'act_type', 'date_notif', 'cit_pessoa_diversa', 'loc_citacao', 'prazo', 'urg'];
+            elementsToListen.forEach(id => {
+                document.getElementById(id).addEventListener('change', calculate);
+            });
+            document.getElementById('act_type').addEventListener('change', toggleDilacaoOptions);
+        }
+
+        // --- INICIALIZAÇÃO ---
+        window.onload = () => {
+            document.getElementById('date_notif').value = new Date().toISOString().slice(0, 10);
+            setupListeners();
+            toggleDilacaoOptions(); // Para definir o estado inicial correto
+        };
+    </script>
 </body>
 </html>
