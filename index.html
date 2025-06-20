@@ -1,102 +1,288 @@
-function calculate() {
-    // 1. OBTER INPUTS
-    const procType = document.getElementById('proc').value;
-    const dateNotifStr = document.getElementById('date_notif').value;
-    const diasPrazoBase = parseInt(document.getElementById('prazo').value) || 1;
-    const isUrgente = document.getElementById('urg').checked;
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Prazos Processuais (Versão Dinâmica)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; background-color: #f8f9fa; color: #212529; }
+        h1 { color: #0056b3; }
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; align-items: start; }
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: .5em; font-weight: 500; }
+        input, select { padding: .6em; font-size: 1em; border: 1px solid #ced4da; border-radius: .25rem; }
+        .full-width { grid-column: 1 / -1; }
+        .checkbox-group { display: flex; align-items: center; gap: .5em; margin-top: .5em;}
+        #dilação_options { border: 1px solid #007bff; padding: 1em; border-radius: .3rem; margin-top: 1em; background-color: #f0f8ff; }
+        #dilação_options legend { font-weight: bold; color: #0056b3; padding: 0 .5em; }
+        button { grid-column: 1 / -1; padding: .8em; font-size: 1.1em; font-weight: bold; color: #fff; background-color: #007bff; border: none; border-radius: .3rem; cursor: pointer; transition: background-color 0.2s; margin-top: 1em;}
+        button:hover { background-color: #0056b3; }
+        #result { margin-top: 1.5em; padding: 1.5em; background: #fff; border: 1px solid #e9ecef; border-radius: .3rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        #result p { margin: 0.5em 0; font-size: 1.1em; }
+        .date-label { font-weight: bold; color: #495057; }
+        .date-value { color: #007bff; }
+        .info-value { color: #28a745; font-weight: bold;}
+        .calculation-mode { margin-top: 1em; padding: .8em; background-color: #e2e3e5; border-radius: .25rem; font-style: italic; font-size: 0.9em; text-align: center;}
+        footer { margin-top: 2em; text-align: center; font-size: 0.8em; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <h1>⚖️ Calculadora de Prazos Processuais</h1>
+    <p>Esta versão calcula dinamicamente os feriados e férias judiciais para qualquer ano.</p>
 
-    if (!dateNotifStr) {
-        document.getElementById('result').innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
-        return;
-    }
-
-    const dataEfetiva = parseDate(dateNotifStr);
-
-    // 2. CALCULAR DILAÇÃO E PRAZO TOTAL
-    const diasDilacao = calculateDilacao();
-    const prazoTotal = diasPrazoBase + diasDilacao;
-
-    // --- Início da Lógica Corrigida ---
-
-    let dataFinal;
-    let calculationMode;
-    
-    // Identificar o caso especial do Processo Penal não urgente
-    const isPenalNaoUrgente = (procType === 'Penal' && !isUrgente);
-
-    if (isPenalNaoUrgente) {
-        // 3. REGIME PENAL NÃO URGENTE: Contagem contínua com transferência do termo
-        calculationMode = `PENAL (NÃO URGENTE) - Contagem contínua (dias corridos), com transferência do termo para o 1º dia útil seguinte.`;
-
-        // A contagem é contínua, basta somar os dias corridos ao dia seguinte ao do ato.
-        // O prazo começa a contar-se no dia seguinte ao da notificação.
-        let diaDePartida = new Date(dataEfetiva);
-        dataFinal = addDays(diaDePartida, prazoTotal); // Soma direta dos dias
-        
-        // Agora, verifica se o termo calha em dia não útil e transfere se necessário.
-        // Para a transferência, as férias contam como dia não útil, por isso isUrgente=false.
-        while (!isBusinessDay(dataFinal, false)) { 
-            dataFinal = addDays(dataFinal, 1);
-        }
-
-    } else {
-        // 4. REGIME GERAL (Cível, Admin, Penal Urgente): Contagem em dias úteis
-        let diaDePartida = new Date(dataEfetiva);
-        let prazoCount = 0;
-
-        // A contagem do prazo (dilação + peremptório) é em dias úteis.
-        while (prazoCount < prazoTotal) {
-            diaDePartida = addDays(diaDePartida, 1);
-            if (isBusinessDay(diaDePartida, isUrgente)) {
-                prazoCount++;
-            }
-        }
-        dataFinal = diaDePartida;
-
-        // 4.1 APLICAR REGIME DE URGÊNCIA (AUJ nº 1/2021) para estes casos
-        if (isUrgente) {
-            calculationMode = `URGENTE (AUJ nº 1/2021) - Contínuo, não suspende em férias e o termo NÃO se transfere.`;
-            // Nenhuma ação necessária, a data final é a que foi calculada.
-        } else {
-            calculationMode = `NÃO URGENTE (CPC/CPTA) - Contagem em dias úteis, com suspensão em férias e transferência do termo.`;
-            // Em processo não urgente, se o termo cair em dia não útil, transfere-se.
-            while (!isBusinessDay(dataFinal, isUrgente)) {
-                dataFinal = addDays(dataFinal, 1);
-            }
-        }
-    }
-    
-    // --- Fim da Lógica Corrigida ---
-
-    // 5. CALCULAR PRAZO DE GRAÇA (Esta lógica mantém-se, pois parte da dataFinal já corrigida)
-    const gracePeriod = [];
-    let lastDay = new Date(dataFinal);
-    let graceCount = 0;
-    while (graceCount < 3) {
-        lastDay = addDays(lastDay, 1);
-        if (isBusinessDay(lastDay, isUrgente)) { // A contagem de dias de graça é sempre em dias úteis
-            graceCount++;
-            gracePeriod.push(lastDay);
-        }
-    }
-
-    // 6. APRESENTAR RESULTADOS
-    let resultHTML = `
-        <p><span class="date-label">🔔 Data Efetiva do Ato:</span> <span class="date-value">${formatDate(dataEfetiva)}</span></p>
-        <p><span class="date-label">➕ Dilação Calculada (Art. 245º CPC):</span> <span class="info-value">${diasDilacao} dias</span></p>
-        <p><span class="date-label">⏳ Prazo Total (Peremptório + Dilação):</span> <span class="info-value">${prazoTotal} dias</span></p>
-        <p><span class="date-label">⏰ Termo do Prazo Peremptório:</span> <span class="date-value">${formatDate(dataFinal)}</span></p>
-
-        <div class="grace-period">
-            <p><span class="date-label">✨ Prazo de Graça (com multa):</span></p>
-            <p>1º Dia: <span class="date-value">${formatDate(gracePeriod[0])}</span></p>
-            <p>2º Dia: <span class="date-value">${formatDate(gracePeriod[1])}</span></p>
-            <p>3º Dia: <span class="date-value">${formatDate(gracePeriod[2])}</span></p>
+    <div class="grid-container">
+        <div class="form-group">
+            <label for="proc">Tipo de Processo:</label>
+            <select id="proc">
+                <option value="Civil">Cível</option>
+                <option value="Administrativo">Administrativo (Tribunal)</option>
+                <option value="Penal">Penal</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="act_type">Tipo de Ato:</label>
+            <select id="act_type">
+                <option value="Citacao">Citação</option>
+                <option value="Notificacao">Notificação</option>
+            </select>
         </div>
 
-        <div class="calculation-mode">
-            <strong>Modo de Contagem:</strong> ${calculationMode}
+        <div class="form-group full-width" id="dilação_options">
+            <fieldset>
+                <legend>Circunstâncias da Citação (para cálculo da dilação)</legend>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="cit_pessoa_diversa">
+                    <label for="cit_pessoa_diversa">Citado em pessoa diversa do citando?</label>
+                </div>
+                <div class="form-group" style="margin-top: 1em;">
+                    <label for="loc_citacao">Local da Citação:</label>
+                    <select id="loc_citacao">
+                        <option value="comarca">Na comarca da ação</option>
+                        <option value="fora_comarca">Fora da comarca da ação</option>
+                        <option value="regioes_autonomas">Entre Continente e Regiões Autónomas (ou entre ilhas)</option>
+                        <option value="estrangeiro">No Estrangeiro</option>
+                        <option value="edital">Citação Edital</option>
+                    </select>
+                </div>
+            </fieldset>
         </div>
-    `;
-    document.getElementById('result').innerHTML = resultHTML;
-}
+
+        <div class="form-group">
+            <label for="date_notif">Data do Ato Efetivo:</label>
+            <input type="date" id="date_notif">
+        </div>
+
+        <div class="form-group">
+            <label for="prazo">Prazo Peremptório (dias):</label>
+            <input type="number" id="prazo" min="1" value="30">
+        </div>
+
+        <div class="form-group full-width">
+            <label>Regime do Processo:</label>
+            <div class="checkbox-group">
+                <input type="checkbox" id="urg">
+                <label for="urg">Urgente</label>
+            </div>
+        </div>
+    </div>
+
+    <button id="calc">Calcular Prazo</button>
+
+    <div id="result"></div>
+
+    <footer>
+        <p>Aviso: Esta ferramenta não dispensa a consulta da lei e de um profissional forense. A lista de feriados não inclui todos os feriados municipais de Portugal.</p>
+    </footer>
+
+    <script>
+        // --- FUNÇÕES UTILITÁRIAS E DE GERAÇÃO DINÂMICA DE DATAS ---
+        const parseDate = (s) => new Date(s + 'T00:00:00');
+        const formatDate = (d) => d.toLocaleDateString("pt-PT", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const toYYYYMMDD = (d) => d.toISOString().slice(0, 10);
+        const addDays = (d, days) => { const date = new Date(d); date.setDate(date.getDate() + days); return date; };
+
+        // Algoritmo para calcular o Domingo de Páscoa para um dado ano.
+        function getEaster(year) {
+            const f = Math.floor,
+                G = year % 19,
+                C = f(year / 100),
+                H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
+                I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11)),
+                J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
+                L = I - J,
+                month = 3 + f((L + 40) / 44),
+                day = L + 28 - 31 * f(month / 4);
+            return new Date(year, month - 1, day);
+        }
+
+        function getHolidays(year) {
+            const easter = getEaster(year);
+            const fixedHolidays = [
+                new Date(year, 0, 1),   // Ano Novo
+                new Date(year, 3, 25),  // Dia da Liberdade
+                new Date(year, 4, 1),   // Dia do Trabalhador
+                new Date(year, 5, 10),  // Dia de Portugal
+                new Date(year, 7, 15),  // Assunção de Nossa Senhora
+                new Date(year, 9, 5),   // Implantação da República
+                new Date(year, 10, 1),  // Dia de Todos-os-Santos
+                new Date(year, 11, 1),  // Restauração da Independência
+                new Date(year, 11, 8),  // Imaculada Conceição
+                new Date(year, 11, 25)  // Natal
+            ];
+            const movableHolidays = [
+                addDays(easter, -47), // Carnaval
+                addDays(easter, -2),  // Sexta-feira Santa
+                addDays(easter, 60)   // Corpo de Deus
+            ];
+            const municipalHolidays = [new Date(year, 5, 24)]; // Ex: São João (Porto)
+
+            return [...fixedHolidays, ...movableHolidays, ...municipalHolidays].map(toYYYYMMDD);
+        }
+
+        function getJudicialVacations(year) {
+            const easter = getEaster(year);
+            const palmSunday = addDays(easter, -7);
+            const easterMonday = addDays(easter, 1);
+            return [
+                { start: `${year - 1}-12-22`, end: `${year}-01-03` }, // Natal (transita o ano)
+                { start: toYYYYMMDD(palmSunday), end: toYYYYMMDD(easterMonday) }, // Páscoa
+                { start: `${year}-07-16`, end: `${year}-08-31` }  // Verão
+            ];
+        }
+
+        function isBusinessDay(d, { isUrgente, holidays, vacations }) {
+            const dateStr = toYYYYMMDD(d);
+            if (!isUrgente && vacations.some(vac => dateStr >= vac.start && dateStr <= vac.end)) return false;
+
+            const dayOfWeek = d.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+            if (holidays.includes(dateStr)) return false;
+            return true;
+        }
+
+        // --- LÓGICA DE CÁLCULO ESPECÍFICA ---
+        function calculateDilacao() {
+            if (document.getElementById('act_type').value !== 'Citacao') return 0;
+
+            let dilação = 0;
+            const pessoaDiversa = document.getElementById('cit_pessoa_diversa').checked;
+            const local = document.getElementById('loc_citacao').value;
+
+            if (pessoaDiversa) { dilação += 5; }
+            switch (local) {
+                case 'fora_comarca': if (!pessoaDiversa) dilação += 5; break;
+                case 'regioes_autonomas': dilação += 15; break;
+                case 'estrangeiro': case 'edital': dilação += 30; break;
+            }
+            return dilação;
+        }
+
+        function calculate() {
+            // 1. OBTER INPUTS E GERAR DATAS DINÂMICAS
+            const procType = document.getElementById('proc').value;
+            const dateNotifStr = document.getElementById('date_notif').value;
+            const diasPrazoBase = parseInt(document.getElementById('prazo').value) || 1;
+            const isUrgente = document.getElementById('urg').checked;
+
+            if (!dateNotifStr) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Por favor, selecione uma data para o ato.</p>`;
+                return;
+            }
+
+            const dataEfetiva = parseDate(dateNotifStr);
+            const year = dataEfetiva.getFullYear();
+            const holidaysForYear = getHolidays(year);
+            const vacationsForYear = getJudicialVacations(year);
+
+            const diasDilacao = calculateDilacao();
+            const prazoTotal = diasPrazoBase + diasDilacao;
+            let dataFinal;
+            let calculationMode;
+
+            // 2. CALCULAR DATA FINAL CONSOANTE O REGIME
+            const businessDayOptions = { isUrgente, holidays: holidaysForYear, vacations: vacationsForYear };
+
+            if (procType === 'Penal' && !isUrgente) {
+                // REGIME PENAL GERAL: Contagem contínua, mas com transferência do termo
+                calculationMode = `PENAL GERAL (CPP) - Contagem em dias de calendário, com transferência do termo se este recair em dia não útil.`;
+                let diaDePartida = new Date(dataEfetiva);
+                dataFinal = addDays(diaDePartida, prazoTotal);
+
+                while (!isBusinessDay(dataFinal, businessDayOptions)) {
+                    dataFinal = addDays(dataFinal, 1);
+                }
+            } else {
+                // REGIME CPC / CPTA / URGENTE: Contagem em dias úteis
+                let diaDePartida = new Date(dataEfetiva);
+                let prazoCount = 0;
+                while (prazoCount < prazoTotal) {
+                    diaDePartida = addDays(diaDePartida, 1);
+                    if (isBusinessDay(diaDePartida, businessDayOptions)) {
+                        prazoCount++;
+                    }
+                }
+                dataFinal = diaDePartida;
+
+                if (isUrgente) {
+                    calculationMode = `URGENTE (AUJ nº 1/2021) - Contagem em dias úteis sem suspensão em férias. O termo NÃO se transfere.`;
+                } else {
+                    calculationMode = `CÍVEL / ADMINISTRATIVO (CPC/CPTA) - Contagem em dias úteis com suspensão em férias.`;
+                }
+            }
+
+            // 3. CALCULAR PRAZO DE GRAÇA
+            const gracePeriod = [];
+            let lastDay = new Date(dataFinal);
+            let graceCount = 0;
+            while (graceCount < 3) {
+                lastDay = addDays(lastDay, 1);
+                if (isBusinessDay(lastDay, businessDayOptions)) {
+                    graceCount++;
+                    gracePeriod.push(lastDay);
+                }
+            }
+
+            // 4. APRESENTAR RESULTADOS
+            let resultHTML = `
+                <p><span class="date-label">🔔 Data Efetiva do Ato:</span> <span class="date-value">${formatDate(dataEfetiva)}</span></p>
+                <p><span class="date-label">➕ Dilação Calculada (Art. 245º CPC):</span> <span class="info-value">${diasDilacao} dias</span></p>
+                <p><span class="date-label">⏳ Prazo Total (Peremptório + Dilação):</span> <span class="info-value">${prazoTotal} dias</span></p>
+                <p><span class="date-label">⏰ Termo do Prazo Peremptório:</span> <span class="date-value">${formatDate(dataFinal)}</span></p>
+
+                <div class="grace-period">
+                    <p><span class="date-label">✨ Prazo de Graça (com multa):</span></p>
+                    <p>1º Dia: <span class="date-value">${formatDate(gracePeriod[0])}</span></p>
+                    <p>2º Dia: <span class="date-value">${formatDate(gracePeriod[1])}</span></p>
+                    <p>3º Dia: <span class="date-value">${formatDate(gracePeriod[2])}</span></p>
+                </div>
+                <div class="calculation-mode">
+                    <strong>Modo de Contagem Utilizado:</strong> ${calculationMode}
+                </div>
+            `;
+            document.getElementById('result').innerHTML = resultHTML;
+        }
+
+        // --- GESTÃO DA INTERFACE E EVENTOS ---
+        function toggleDilacaoOptions() {
+            const actType = document.getElementById('act_type').value;
+            const dilaçãoDiv = document.getElementById('dilação_options');
+            dilaçãoDiv.style.display = (actType === 'Citacao') ? 'block' : 'none';
+            calculate();
+        }
+
+        function setupListeners() {
+            const elementsToListen = ['proc', 'act_type', 'date_notif', 'cit_pessoa_diversa', 'loc_citacao', 'prazo', 'urg'];
+            elementsToListen.forEach(id => {
+                document.getElementById(id)?.addEventListener('change', calculate);
+            });
+        }
+
+        // --- INICIALIZAÇÃO ---
+        window.onload = () => {
+            document.getElementById('date_notif').value = new Date().toISOString().slice(0, 10);
+            setupListeners();
+            toggleDilacaoOptions();
+        };
+    </script>
+</body>
+</html>
