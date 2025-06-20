@@ -10,7 +10,6 @@
     input, select, button { padding: .4em; font-size: 1em; }
     button { margin-top: 1em; }
     #result { margin-top: 1.5em; padding: 1em; background: #f0f0f0; }
-    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -18,16 +17,9 @@
 
   <label>Processo:
     <select id="proc">
-      <option value="Civil">Civil</option>
-      <option value="Penal">Penal</option>
-      <option value="Administrativo">Administrativo</option>
-    </select>
-  </label>
-
-  <label>Tipo de Ato:
-    <select id="ato">
-      <option value="Notificação">Notificação</option>
-      <option value="Citação">Citação</option>
+      <option>Civil</option>
+      <option>Penal</option>
+      <option>Administrativo</option>
     </select>
   </label>
 
@@ -44,7 +36,7 @@
     <input type="date" id="date_notif" value="">
   </label>
 
-  <label id="dil_label" class="hidden">Dilações (dias):
+  <label>Dilações (dias):
     <input type="number" id="dil" min="0" value="0">
   </label>
 
@@ -60,15 +52,25 @@
   <div id="result"></div>
 
   <script>
-    // Lista de feriados nacionais em Portugal 2025
+    // Lista de feriados nacionais em Portugal 2025 :contentReference[oaicite:0]{index=0}
     const holidays = [
-      "2025-01-01", "2025-04-18", "2025-04-20", "2025-04-25", "2025-05-01",
-      "2025-06-10", "2025-06-19", "2025-08-15", "2025-10-05",
-      "2025-11-01", "2025-12-01", "2025-12-08", "2025-12-25"
+      "2025-01-01", // Ano Novo
+      "2025-04-18", // Sexta-feira Santa
+      "2025-04-20", // Domingo de Páscoa
+      "2025-04-25", // Dia da Liberdade
+      "2025-05-01", // Dia do Trabalhador
+      "2025-06-10", // Dia de Portugal
+      "2025-06-19", // Corpo de Deus
+      "2025-08-15", // Assunção de Nossa Senhora
+      "2025-10-05", // Implantação da República
+      "2025-11-01", // Dia de Todos-os-Santos
+      "2025-12-01", // Restauração da Independência
+      "2025-12-08", // Imaculada Conceição
+      "2025-12-25"  // Natal
     ];
 
     function isBusinessDay(d) {
-      const wd = d.getDay();
+      const wd = d.getDay(); // 0=Dom,6=Sáb
       const iso = d.toISOString().slice(0,10);
       return wd >=1 && wd <=5 && !holidays.includes(iso);
     }
@@ -115,33 +117,11 @@
       return { eff, start, end };
     }
 
-    function updateDilField() {
-      const proc = document.getElementById("proc").value;
-      const ato = document.getElementById("ato").value;
-      const dilLabel = document.getElementById("dil_label");
-      // Só mostra se Processo Civil E Ato Citação
-      if (proc === "Civil" && ato === "Citação") {
-        dilLabel.classList.remove("hidden");
-      } else {
-        dilLabel.classList.add("hidden");
-        document.getElementById("dil").value = 0;
-      }
-    }
-
-    document.getElementById("proc").onchange = updateDilField;
-    document.getElementById("ato").onchange = updateDilField;
-
     document.getElementById("calc").onclick = () => {
       const nd = document.getElementById("date_notif").value;
       if (!nd) { alert("Escolhe uma data!"); return; }
       const notif = document.getElementById("notif").value;
-      const proc = document.getElementById("proc").value;
-      const ato = document.getElementById("ato").value;
-      let dil = 0;
-      // Só considera dilação se Processo Civil e Citação
-      if (proc === "Civil" && ato === "Citação") {
-        dil = parseInt(document.getElementById("dil").value) || 0;
-      }
+      const dil = parseInt(document.getElementById("dil").value);
       const prazo = parseInt(document.getElementById("prazo").value);
 
       const eff = getEffectiveDate(nd, notif);
@@ -152,18 +132,11 @@
         <p>🔔 <strong>Data efetiva da notificação:</strong> ${fmt(eff)}</p>
         <p>🟢 <strong>Data início da contagem:</strong> ${fmt(start)}</p>
         <p>⏰ <strong>Data final (prazo):</strong> ${fmt(end)}</p>
-        <p style="font-size:0.9em;color:#666;">
-          ${proc === "Civil" && ato === "Citação" && dil > 0 ? "Dilação aplicada conforme art. 245.º CPC." : ""}
-          ${proc === "Civil" && ato === "Notificação" ? "Sem dilação em notificações civis (art. 245.º CPC)." : ""}
-        </p>
       `;
     };
 
     // inicializa data hoje no datepicker
     document.getElementById("date_notif").value = new Date().toISOString().slice(0,10);
-
-    // inicializa campo dilação visível/escondido
-    updateDilField();
   </script>
 </body>
 </html>
